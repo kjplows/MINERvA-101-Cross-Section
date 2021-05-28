@@ -17,7 +17,7 @@ std::vector<std::unique_ptr<PlotUtils::Reweighter<UNIVERSE, EVENT>>> GetMnvTunev
 
   weighters.emplace_back(new PlotUtils::FluxAndCVReweighter<UNIVERSE, EVENT>());
   weighters.emplace_back(new PlotUtils::GENIEReweighter<UNIVERSE, EVENT>(true, false));
-  weighters.emplace_back(new PlotUtils::LowRecoil2p2hReweighter<UNIVERSE, EVENT>());
+  //weighters.emplace_back(new PlotUtils::LowRecoil2p2hReweighter<UNIVERSE, EVENT>());
   weighters.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<UNIVERSE, EVENT>());
   weighters.emplace_back(new PlotUtils::RPAReweighter<UNIVERSE, EVENT>());
 
