@@ -6,6 +6,7 @@
 #include "PlotUtils/reweighters/Model.h"
 #include "PlotUtils/reweighters/FluxAndCVReweighter.h"
 #include "PlotUtils/reweighters/GENIEReweighter.h"
+#include "PlotUtils/reweighters/LowQ2PiReweighter.h"
 #include "PlotUtils/reweighters/LowRecoil2p2hReweighter.h"
 #include "PlotUtils/reweighters/MINOSEfficiencyReweighter.h"
 #include "PlotUtils/reweighters/RPAReweighter.h"
@@ -20,6 +21,7 @@ std::vector<std::unique_ptr<PlotUtils::Reweighter<UNIVERSE, EVENT>>> GetMnvTunev
   weighters.emplace_back(new PlotUtils::LowRecoil2p2hReweighter<UNIVERSE, EVENT>());
   weighters.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<UNIVERSE, EVENT>());
   weighters.emplace_back(new PlotUtils::RPAReweighter<UNIVERSE, EVENT>());
+  weighters.emplace_back(new PlotUtils::LowQ2PiReweighter<UNIVERSE, EVENT>("JOINT"));
 
   return weighters;
 }
