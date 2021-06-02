@@ -1,5 +1,5 @@
-#define MC_OUT_FILE_NAME "runEventLoopMC.root"
-#define DATA_OUT_FILE_NAME "runEventLoopData.root"
+#define MC_OUT_FILE_NAME "runEventLoopMC_warp_AMUDISTuneOn.root"
+#define DATA_OUT_FILE_NAME "runEventLoopData_warp_AMUDISTuneOn.root"
 
 #define USAGE \
 "\n*** USAGE ***\n"\
