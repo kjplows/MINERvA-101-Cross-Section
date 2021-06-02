@@ -351,7 +351,8 @@ int main(const int argc, const char** argv)
 
   // Make a map of systematic universes
   // Leave out systematics when making validation histograms
-  const bool doSystematics = (getenv("MNV101_SKIP_SYST") == nullptr);
+  //const bool doSystematics = (getenv("MNV101_SKIP_SYST") == nullptr);
+  const bool doSystematics = false;
   if(!doSystematics) std::cout << "Skipping systematics because environment variable MNV101_SKIP_SYST is set.\n";
 
   std::map< std::string, std::vector<CVUniverse*> > error_bands;
