@@ -32,6 +32,18 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   virtual ~CVUniverse() {}
 
   // ========================================================================
+  // Quantities defined here as constants for the sake of below. Definition
+  // matched to Dan's CCQENuInclusiveME variables from:
+  // `/minerva/app/users/drut1186/cmtuser/Minerva_v22r1p1_OrigCCQENuInc/Ana/CCQENu/ana_common/include/CCQENuUtils.h`
+  // ========================================================================
+  static constexpr double M_n = 939.56536;
+  static constexpr double M_p = 938.272013;
+  static constexpr double M_nucleon = (1.5*M_n+M_p)/2.5;
+
+  static constexpr int PDG_n = 2112;
+  static constexpr int PDG_p = 2212;
+
+  // ========================================================================
   // Write a "Get" function for all quantities access by your analysis.
   // For composite quantities (e.g. Enu) use a calculator function.
   //
@@ -79,8 +91,19 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   int GetInteractionType() const {
     return GetInt("mc_intType");
   }
+
+  int GetTargetNucleon() const {
+    return GetInt("mc_targetNucleon");
+  }
   
-  
+  double GetBjorkenXTrue() const {
+    return GetDouble("mc_Bjorkenx");
+  }
+
+  double GetBjorkenYTrue() const {
+    return GetDouble("mc_Bjorkeny");
+  }
+
   virtual bool IsMinosMatchMuon() const {
     return GetInt("has_interaction_vertex") == 1;
   }
@@ -98,13 +121,9 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
     result.SetCoordinates(GetVec<double>("mc_vtx").data());
     return result;
   }
-  
-  virtual double GetTrueQ2() const {
-    return GetDouble("mc_Q2");
-  }
 
   virtual int GetTDead() const {
-    return GetInt("phys_n_dead_discr_pair_upstream_prim_track_proj");;
+    return GetInt("phys_n_dead_discr_pair_upstream_prim_track_proj");
   }
   
   //TODO: If there was a spline correcting Eavail, it might not really be Eavail.
@@ -140,10 +159,37 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
     return GetDouble((GetAnaToolName() + "_minos_trk_qp").c_str());
   }
 
+  //Some functions to match CCQENuInclusive treatment of DIS weighting. Name matches same Dan area as before.
+  virtual double GetTrueExperimentersQ2() const {
+    double Enu = GetEnuTrue(); //MeV
+    double Emu = GetElepTrue(); //MeV
+    double thetaMu = GetThetalepTrue();
+    return 4.0*Enu*Emu*pow(sin(thetaMu/2.0),2.0);//MeV^2
+  }
+
+  virtual double CalcTrueExperimentersQ2(double Enu, double Emu, double thetaMu) const{
+    return 4.0*Enu*Emu*pow(sin(thetaMu/2.0),2.0);//MeV^2
+  }
+
+  virtual double GetTrueExperimentersW() const {
+    double nuclMass = M_nucleon;
+    int struckNucl = GetTargetNucleon();
+    if (struckNucl == PDG_n){
+      nuclMass=M_n;
+    }
+    else if (struckNucl == PDG_p){
+      nuclMass=M_p;
+    }
+    double Enu = GetEnuTrue();
+    double Emu = GetElepTrue();
+    double thetaMu = GetThetalepTrue();
+    double Q2 = CalcTrueExperimentersQ2(Enu, Emu, thetaMu);
+    return TMath::Sqrt(pow(nuclMass,2) + 2.0*(Enu-Emu)*nuclMass - Q2);
+  }
+
   //Still needed for some systematics to compile, but shouldn't be used for reweighting anymore.
   protected:
-    #include "PlotUtils/SystCalcs/WeightFunctions.h" // Get*Weight
-
+  #include "PlotUtils/SystCalcs/WeightFunctions.h" // Get*Weight
 };
 
 #endif

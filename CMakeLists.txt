@@ -78,6 +78,8 @@ add_executable(runXSecLooper runXSecLooper.cpp)
 target_link_libraries(runXSecLooper ${ROOT_LIBRARIES} PlotUtils GENIEXSecExtract)
 install(TARGETS runXSecLooper DESTINATION bin)
 
+install(FILES backgroundStack.py PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE DESTINATION bin)
+
 install(FILES runTransWarp.sh PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE DESTINATION bin)
 
 configure_file(setup.sh.in setup_${PROJECT_NAME}.sh @ONLY)
