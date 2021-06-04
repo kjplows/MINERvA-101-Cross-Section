@@ -353,10 +353,17 @@ int main(const int argc, const char** argv)
   // Leave out systematics when making validation histograms
   //const bool doSystematics = (getenv("MNV101_SKIP_SYST") == nullptr);
   const bool doSystematics = false;
-  if(!doSystematics) std::cout << "Skipping systematics because environment variable MNV101_SKIP_SYST is set.\n";
+  if(!doSystematics){
+    std::cout << "Skipping systematics (except 1 flux universe) because environment variable MNV101_SKIP_SYST is set.\n";
+    PlotUtils::MinervaUniverse::SetNFluxUniverses(1); //Necessary to get Flux integral later...
+  }
 
   std::map< std::string, std::vector<CVUniverse*> > error_bands;
   if(doSystematics) error_bands = GetStandardSystematics(options.m_mc);
+  else{
+    std::map<std::string, std::vector<CVUniverse*> > band_flux = PlotUtils::GetFluxSystematicsMap<CVUniverse>(options.m_mc, CVUniverse::GetNFluxUniverses());
+    error_bands.insert(band_flux.begin(), band_flux.end()); //Necessary to get flux integral later...
+  }
   error_bands["cv"] = {new CVUniverse(options.m_mc)};
   std::map< std::string, std::vector<CVUniverse*> > truth_bands;
   if(doSystematics) truth_bands = GetStandardSystematics(options.m_truth);
@@ -447,7 +454,7 @@ int main(const int argc, const char** argv)
     {
       //Flux integral only if systematics are being done (temporary solution)
       //TODO: Solve how to get flux integral in case of no systematics...
-      if (doSystematics) util::GetFluxIntegral(*error_bands["cv"].front(), var->efficiencyNumerator->hist)->Write((var->GetName() + "_reweightedflux_integrated").c_str());
+      util::GetFluxIntegral(*error_bands["cv"].front(), var->efficiencyNumerator->hist)->Write((var->GetName() + "_reweightedflux_integrated").c_str());
       //TODO: Make sure minZ, maxZ, and apothem match signal definition somehow
       const double minZ = 5980, maxZ = 8422, apothem = 850; //All in mm
       //Always use MC number of nucleons for cross section
