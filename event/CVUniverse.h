@@ -34,8 +34,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
   // ========================================================================
   // Quantities defined here as constants for the sake of below. Definition
   // matched to Dan's CCQENuInclusiveME variables from:
-  // `/minerva/app/users/drut1186/cmtuser/Minerva_v22r1p1_OrigCCQENuInc/Ana/\
-  //   CCQENu/ana_common/include/CCQENuUtils.h`
+  // `/minerva/app/users/drut1186/cmtuser/Minerva_v22r1p1_OrigCCQENuInc/Ana/CCQENu/ana_common/include/CCQENuUtils.h`
   // ========================================================================
   static constexpr double M_n = 939.56536;
   static constexpr double M_p = 938.272013;

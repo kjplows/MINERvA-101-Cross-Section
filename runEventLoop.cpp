@@ -21,7 +21,7 @@
 "Setting up this package appends to PATH and LD_LIBRARY_PATH.  PLOTUTILSROOT,\n"\
 "MPARAMFILESROOT, and MPARAMFILES must be set according to the setup scripts in\n"\
 "those packages for systematics and flux reweighters to function.\n"\
-"If MNV_SKIP_SYST is defined at all, output histograms will have no error bands.\n"\
+"If MNV101_SKIP_SYST is defined at all, output histograms will have no error bands.\n"\
 "This is useful for debugging the CV and running warping studies.\n\n"\
 "*** Return Codes ***\n"\
 "0 indicates success.  All histograms are valid only in this case.  Any other\n"\
@@ -383,7 +383,6 @@ int main(const int argc, const char** argv)
     vars.push_back(new Variable("Erecoil", "E_{recoil}", robsRecoilBins, &CVUniverse::GetRecoilE, &CVUniverse::Getq0True)); //TODO: q0 is not the same as recoil energy without a spline correction
     vars2D.push_back(new Variable2D(*vars[1], *vars[0]));
   }
-  //TODO: Disable validation suite histograms too if the tree name is not CCQENu
 
   std::vector<Study*> studies;
 
@@ -446,8 +445,9 @@ int main(const int argc, const char** argv)
 
     for(const auto& var: vars)
     {
-      //Flux integral
-      util::GetFluxIntegral(*error_bands["cv"].front(), var->efficiencyNumerator->hist)->Write((var->GetName() + "_reweightedflux_integrated").c_str());
+      //Flux integral only if systematics are being done (temporary solution)
+      //TODO: Solve how to get flux integral in case of no systematics...
+      if (doSystematics) util::GetFluxIntegral(*error_bands["cv"].front(), var->efficiencyNumerator->hist)->Write((var->GetName() + "_reweightedflux_integrated").c_str());
       //TODO: Make sure minZ, maxZ, and apothem match signal definition somehow
       const double minZ = 5980, maxZ = 8422, apothem = 850; //All in mm
       //Always use MC number of nucleons for cross section

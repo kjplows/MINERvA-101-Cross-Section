@@ -6,7 +6,7 @@ VARIABLE=pTmu
 MIGRATION_FILE=$1
 TRUE_HIST=${VARIABLE}_efficiency_numerator
 WARPED_FILE=$2
-RECO_HIST=${VARIABLE}_selected_mc_reco
+RECO_HIST=${VARIABLE}_data
 
 OUTFILE_NAME=$(basename $2)
 
