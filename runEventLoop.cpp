@@ -391,7 +391,7 @@ int main(const int argc, const char** argv)
   const bool doSystematics = false;
   if(!doSystematics){
     std::cout << "Skipping systematics (except 1 flux universe) because environment variable MNV101_SKIP_SYST is set.\n";
-    PlotUtils::MinervaUniverse::SetNFluxUniverses(1); //Necessary to get Flux integral later...
+    PlotUtils::MinervaUniverse::SetNFluxUniverses(2); //Necessary to get Flux integral later...  Doesn't work with just 1 flux universe though because _that_ triggers "spread errors".
   }
 
   std::map< std::string, std::vector<CVUniverse*> > error_bands;
