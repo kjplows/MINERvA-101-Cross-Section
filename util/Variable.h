@@ -34,34 +34,27 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
 							   GetName().c_str(), BKGLabels,
 							   GetBinVec(), mc_error_bands);
 
-      efficiencyNumerator = new Hist((GetName() + "_efficiency_numerator").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
-      efficiencyDenominator = new Hist((GetName() + "_efficiency_denominator").c_str(), GetName().c_str(), GetBinVec(), truth_error_bands);
       selectedSignalReco = new Hist((GetName() + "_selected_signal_reco").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
       selectedMCReco = new Hist((GetName() + "_selected_mc_reco").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
-      migration = new PlotUtils::Hist2DWrapper<CVUniverse>((GetName() + "_migration").c_str(), GetName().c_str(), GetBinVec(), GetBinVec(), mc_error_bands);
     }
 
     //Histograms to be filled
     util::Categorized<Hist, int>* m_backgroundHists;
-    Hist* dataHist;
-    Hist* efficiencyNumerator;
-    Hist* efficiencyDenominator;
     Hist* selectedSignalReco; //Effectively "true background subtracted" distribution for warping studies.
                               //Also useful for a bakground breakdown plot that you'd use to start background subtraction studies.
     Hist* selectedMCReco; //Treat the MC CV just like data for the closure test
-    PlotUtils::Hist2DWrapper<CVUniverse>* migration;
 
     void InitializeDATAHists(std::vector<CVUniverse*>& data_error_bands)
     {
-      dataHist = new Hist((GetName() + "_data").c_str(), GetName().c_str(), GetBinVec(), data_error_bands);
     }
 
     void WriteData(TFile& file)
     {
-      if (dataHist->hist) {
+      //TODO: Write dataHist to a file
+      /*if (dataHist->hist) {
                 dataHist->hist->SetDirectory(&file);
                 dataHist->hist->Write();
-      }
+      }*/
     }
 
     void WriteMC(TFile& file)
@@ -72,26 +65,8 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
       m_backgroundHists->visit([&file](Hist& categ)
                                     {
                                       categ.hist->SetDirectory(&file);
-                                      categ.hist->Write(); //TODO: Or let the TFile destructor do this the "normal" way?                                                                                           
+                                      categ.hist->Write();                                                                                           
                                     });
-
-      if(efficiencyNumerator)
-      {
-        efficiencyNumerator->hist->SetDirectory(&file); //TODO: Can I get around having to call SetDirectory() this many times somehow?
-        efficiencyNumerator->hist->Write();
-      }
-
-      if(efficiencyDenominator)
-      {
-        efficiencyDenominator->hist->SetDirectory(&file);
-        efficiencyDenominator->hist->Write();
-      }
-
-      if(migration)
-      {
-        migration->hist->SetDirectory(&file); 
-        migration->hist->Write();
-      }
 
       if(selectedSignalReco)
       {
@@ -113,12 +88,9 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
     void SyncCVHistos()
     {
       m_backgroundHists->visit([](Hist& categ) { categ.SyncCVHistos(); });
-      if(dataHist) dataHist->SyncCVHistos();
-      if(efficiencyNumerator) efficiencyNumerator->SyncCVHistos();
-      if(efficiencyDenominator) efficiencyDenominator->SyncCVHistos();
+      //if(dataHist) dataHist->SyncCVHistos(); //TODO: Tell dataHist's error bands about the CV
       if(selectedSignalReco) selectedSignalReco->SyncCVHistos();
       if(selectedMCReco) selectedMCReco->SyncCVHistos();
-      if(migration) migration->SyncCVHistos();
     }
 };
 
