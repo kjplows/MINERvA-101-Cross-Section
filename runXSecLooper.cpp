@@ -73,8 +73,8 @@ int main(const int argc, const char** argv)
   loop.setFiducial(5980, 8422);
 
   // Add the differential cross section dsigma/ds_dpT
-  double pt_edges[] = { 0.0, 0.075, 0.15, 0.25, 0.325, 0.4, 0.475, 0.55, 0.7, 0.85, 1.0, 1.25, 1.5, 2.5 };
-  int pt_nbins = 13; 
+  double pt_edges[] = { 0.0, 0.075, 0.15, 0.25, 0.325, 0.4, 0.475, 0.55, 0.7, 0.85, 1.0, 1.25, 1.5, 2.5, 4.5 };
+  int pt_nbins = 14; 
  
   // Flux-integrated over the range 0.0 to 100.0 GeV
   MinModDepCCQEXSec* ds_dpT = new MinModDepCCQEXSec("pT");
