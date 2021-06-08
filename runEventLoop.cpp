@@ -50,7 +50,6 @@ enum ErrorCodes
 #include "event/MichelEvent.h"
 #include "systematics/Systematics.h"
 #include "cuts/MaxPzMu.h"
-#include "util/GetMnvTunev1.h"
 #include "util/Variable.h"
 #include "util/Variable2D.h"
 #include "util/GetFluxIntegral.h"
@@ -70,6 +69,12 @@ enum ErrorCodes
 #include "PlotUtils/cuts/CCInclusiveSignal.h"
 #include "PlotUtils/CrashOnROOTMessage.h" //Sets up ROOT's debug callbacks by itself
 #include "PlotUtils/Cutter.h"
+#include "PlotUtils/reweighters/Model.h"
+#include "PlotUtils/reweighters/FluxAndCVReweighter.h"
+#include "PlotUtils/reweighters/GENIEReweighter.h"
+#include "PlotUtils/reweighters/LowRecoil2p2hReweighter.h"
+#include "PlotUtils/reweighters/RPAReweighter.h"
+#include "PlotUtils/reweighters/MINOSEfficiencyReweighter.h"
 #include "PlotUtils/TargetUtils.h"
 #pragma GCC diagnostic pop
 
@@ -138,7 +143,7 @@ void LoopAndFillEventSelection(
             //Cross section components
             var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight);
             var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight);
-            var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight); //Efficiency numerator in reco variables.  Usefule for warping studies.
+            var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight); //Efficiency numerator in reco variables.  Useful for warping studies.
           }
 
           for(auto& var: vars2D)
@@ -349,6 +354,37 @@ int main(const int argc, const char** argv)
   PlotUtils::MinervaUniverse::SetNFluxUniverses(100);
   PlotUtils::MinervaUniverse::SetZExpansionFaReweight(false);
 
+  //Now that we've defined what a cross section is, decide which sample and model
+  //we're extracting a cross section for.
+  PlotUtils::Cutter<CVUniverse, MichelEvent>::reco_t sidebands, preCuts;
+  PlotUtils::Cutter<CVUniverse, MichelEvent>::truth_t signalDefinition, phaseSpace;
+
+  const double minZ = 5980, maxZ = 8422, apothem = 850; //All in mm
+  preCuts.emplace_back(new reco::ZRange<CVUniverse, MichelEvent>("Tracker", minZ, maxZ));
+  preCuts.emplace_back(new reco::Apothem<CVUniverse, MichelEvent>(apothem));
+  preCuts.emplace_back(new reco::MaxMuonAngle<CVUniverse, MichelEvent>(20.));
+  preCuts.emplace_back(new reco::HasMINOSMatch<CVUniverse, MichelEvent>());
+  preCuts.emplace_back(new reco::NoDeadtime<CVUniverse, MichelEvent>(1, "Deadtime"));
+  preCuts.emplace_back(new reco::IsNeutrino<CVUniverse, MichelEvent>());
+                                                                                                                                                   
+  signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
+  signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
+                                                                                                                                                   
+  phaseSpace.emplace_back(new truth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
+  phaseSpace.emplace_back(new truth::Apothem<CVUniverse>(apothem));
+  phaseSpace.emplace_back(new truth::MuonAngle<CVUniverse>(20.));
+  phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
+                                                                                                                                                   
+  PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
+
+  std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev1;
+  MnvTunev1.emplace_back(new PlotUtils::FluxAndCVReweighter<CVUniverse, MichelEvent>());
+  MnvTunev1.emplace_back(new PlotUtils::GENIEReweighter<CVUniverse, MichelEvent>(true, false));
+  MnvTunev1.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
+  MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
+
+  PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
+
   // Make a map of systematic universes
   // Leave out systematics when making validation histograms
   //const bool doSystematics = (getenv("MNV101_SKIP_SYST") == nullptr);
@@ -372,7 +408,7 @@ int main(const int argc, const char** argv)
   std::vector<double> dansPTBins = {0, 0.075, 0.15, 0.25, 0.325, 0.4, 0.475, 0.55, 0.7, 0.85, 1, 1.25, 1.5, 2.5, 4.5},
                       dansPzBins = {1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40, 60},
                       robsEmuBins = {0,1,2,3,4,5,7,9,12,15,18,22,36,50,75,100,120},
-                      robsRecoilBins; // = {0,50,100,150, 200, 250, 300, ,4900,4950,500};
+                      robsRecoilBins;
 
   const double robsRecoilBinWidth = 50; //MeV
   for(int whichBin = 0; whichBin < 100 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
@@ -393,7 +429,6 @@ int main(const int argc, const char** argv)
 
   std::vector<Study*> studies;
 
-  //TODO: I should be able to simplify setting up the data CV a lot
   CVUniverse* data_universe = new CVUniverse(options.m_data);
   std::vector<CVUniverse*> data_band = {data_universe};
   std::map<std::string, std::vector<CVUniverse*> > data_error_bands;
@@ -406,15 +441,6 @@ int main(const int argc, const char** argv)
 
   for(auto& var: vars2D) var->InitializeMCHists(error_bands, truth_bands);
   for(auto& var: vars2D) var->InitializeDATAHists(data_band);
-
-  PlotUtils::Cutter<CVUniverse, MichelEvent>::reco_t sidebands;
-  auto precuts = reco::GetCCInclusive2DCuts<CVUniverse, MichelEvent>();
-  auto signalDefinition = truth::GetCCInclusive2DSignal<CVUniverse>();
-  auto phaseSpace = truth::GetCCInclusive2DPhaseSpace<CVUniverse>();
-  //phaseSpace.emplace_back(new MaxPzMu<CVUniverse>(60e3));
-
-  PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(precuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
-  PlotUtils::Model<CVUniverse, MichelEvent> model(GetMnvTunev1<CVUniverse, MichelEvent>());
 
   // Loop entries and fill
   try
@@ -453,10 +479,7 @@ int main(const int argc, const char** argv)
     for(const auto& var: vars)
     {
       //Flux integral only if systematics are being done (temporary solution)
-      //TODO: Solve how to get flux integral in case of no systematics...
       util::GetFluxIntegral(*error_bands["cv"].front(), var->efficiencyNumerator->hist)->Write((var->GetName() + "_reweightedflux_integrated").c_str());
-      //TODO: Make sure minZ, maxZ, and apothem match signal definition somehow
-      const double minZ = 5980, maxZ = 8422, apothem = 850; //All in mm
       //Always use MC number of nucleons for cross section
       auto nNucleons = new TParameter<double>((var->GetName() + "_fiducial_nucleons").c_str(), targetInfo.GetTrackerNNucleons(minZ, maxZ, true, apothem));
       nNucleons->Write();

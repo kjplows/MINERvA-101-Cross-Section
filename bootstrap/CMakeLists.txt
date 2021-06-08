@@ -12,11 +12,17 @@ if(EXISTS ${SOURCE_CODE_DIR}/Ana AND NOT ${CMAKE_NOT_FIRST_RUN})
   set(CVS_DOWNLOAD_COMMAND "DOWNLOAD_COMMAND \"\"")
 endif()
 
+#Automatically pull the latest changes to all packages and update them
+if(NOT DISABLE_AUTO_UPDATE)
+  set(DISABLE_AUTO_UPDATE false)
+endif()
+
 ExternalProject_Add(PlotUtils
                     CVS_REPOSITORY minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft
                     CVS_MODULE Ana/PlotUtils
                     ${CVS_DOWNLOAD_COMMAND}
                     SOURCE_DIR ${SOURCE_CODE_DIR}/Ana/PlotUtils
+                    UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE})
 
 ExternalProject_Add(UnfoldUtils
@@ -24,6 +30,7 @@ ExternalProject_Add(UnfoldUtils
                     CVS_MODULE Ana/UnfoldUtils
                     ${CVS_DOWNLOAD_COMMAND}
                     SOURCE_DIR ${SOURCE_CODE_DIR}/Ana/UnfoldUtils
+                    UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     DEPENDS PlotUtils)
 
@@ -32,6 +39,7 @@ ExternalProject_Add(GENIEXSecExtract
                     CVS_MODULE GENIEXSecExtract
                     ${CVS_DOWNLOAD_COMMAND}
                     SOURCE_DIR ${SOURCE_CODE_DIR}/GENIEXSecExtract
+                    UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     DEPENDS PlotUtils)
 
@@ -43,6 +51,7 @@ ExternalProject_Add(MParamFiles
                     CVS_MODULE MParamFiles
                     ${CVS_DOWNLOAD_COMMAND}
                     SOURCE_DIR ${SOURCE_CODE_DIR}/MParamFiles
+                    UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}
                     CONFIGURE_COMMAND ""
                     BUILD_COMMAND ""
                     INSTALL_COMMAND ""
@@ -54,6 +63,7 @@ ExternalProject_Add(MParamFiles
 #that's newer than the CMake version on the GPVMs or my laptop.
 ExternalProject_Add(MINERvA-101-Cross-Section
                     SOURCE_DIR ${SOURCE_CODE_DIR}/MINERvA-101-Cross-Section
+                    UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     UPDATE_COMMAND ""
                     PATCH_COMMAND ""

@@ -1,2 +1,0 @@
-root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/users/drut1186/CCQENu_Anatuples/MuonKludge_MichelFit_BlobFit/MC_Merged/minervame1Apass1/CCQENu_mc_AnaTuple_run00110018.root
-root://fndca1.fnal.gov:1094/pnfs/fnal.gov/usr/minerva/persistent/users/drut1186/CCQENu_Anatuples/MuonKludge_MichelFit_BlobFit/MC_Merged/minervame1Apass1/CCQENu_mc_AnaTuple_run00110019.root
