@@ -18,8 +18,6 @@ set( CMAKE_C_FLAGS_PROF "-ggdb -pg -DNDEBUG" )
 set( CMAKE_EXE_LINKER_FLAGS_PROF "-ggdb -pg -DNDEBUG" )
 set( CMAKE_SHARED_LINKER_FLAGS_PROF "-ggdb -pg -DNDEBUG" )
 
-set( CMAKE_CXX_STANDARD 17 )
-
 #Tell this package where it is installed and version control status
 add_definitions(-DINSTALL_DIR="${CMAKE_INSTALL_PREFIX}/")
 
