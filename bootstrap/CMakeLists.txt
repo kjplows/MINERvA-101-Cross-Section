@@ -17,20 +17,26 @@ if(NOT DISABLE_AUTO_UPDATE)
   set(DISABLE_AUTO_UPDATE false)
 endif()
 
+#Hack to turn off UPDATE_DISCONNECTED for CMake < 3.2.0 when it didn't exist.
+#This affects the default cmake version on the SL7 MINERvA GPVMs.
+if(${CMAKE_VERSION} VERSION_GREATER "3.2.0")
+  set(UPDATE_OPTION "UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}")
+endif()
+
 ExternalProject_Add(PlotUtils
                     CVS_REPOSITORY minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft
                     CVS_MODULE Ana/PlotUtils
                     ${CVS_DOWNLOAD_COMMAND}
-                    SOURCE_DIR ${SOURCE_CODE_DIR}/Ana/PlotUtils
-                    UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}
+                    SOURCE_DIR "${SOURCE_CODE_DIR}/Ana/PlotUtils"
+                    ${UPDATE_OPTION}
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE})
 
 ExternalProject_Add(UnfoldUtils
                     CVS_REPOSITORY minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft
                     CVS_MODULE Ana/UnfoldUtils
                     ${CVS_DOWNLOAD_COMMAND}
-                    SOURCE_DIR ${SOURCE_CODE_DIR}/Ana/UnfoldUtils
-                    UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}
+                    SOURCE_DIR "${SOURCE_CODE_DIR}/Ana/UnfoldUtils"
+                    ${UPDATE_OPTION}
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     DEPENDS PlotUtils)
 
@@ -38,8 +44,8 @@ ExternalProject_Add(GENIEXSecExtract
                     CVS_REPOSITORY minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft
                     CVS_MODULE GENIEXSecExtract
                     ${CVS_DOWNLOAD_COMMAND}
-                    SOURCE_DIR ${SOURCE_CODE_DIR}/GENIEXSecExtract
-                    UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}
+                    SOURCE_DIR "${SOURCE_CODE_DIR}/GENIEXSecExtract"
+                    ${UPDATE_OPTION}
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     DEPENDS PlotUtils)
 
@@ -50,8 +56,8 @@ ExternalProject_Add(MParamFiles
                     CVS_REPOSITORY minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft
                     CVS_MODULE MParamFiles
                     ${CVS_DOWNLOAD_COMMAND}
-                    SOURCE_DIR ${SOURCE_CODE_DIR}/MParamFiles
-                    UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}
+                    SOURCE_DIR "${SOURCE_CODE_DIR}/MParamFiles"
+                    ${UPDATE_OPTION}
                     CONFIGURE_COMMAND ""
                     BUILD_COMMAND ""
                     INSTALL_COMMAND ""
@@ -62,8 +68,8 @@ ExternalProject_Add(MParamFiles
 #happens at build time.  FetchContent() fixes this in CMake 3.11, but
 #that's newer than the CMake version on the GPVMs or my laptop.
 ExternalProject_Add(MINERvA-101-Cross-Section
-                    SOURCE_DIR ${SOURCE_CODE_DIR}/MINERvA-101-Cross-Section
-                    UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}
+                    SOURCE_DIR "${SOURCE_CODE_DIR}/MINERvA-101-Cross-Section"
+                    ${UPDATE_OPTION}
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     UPDATE_COMMAND ""
                     PATCH_COMMAND ""
