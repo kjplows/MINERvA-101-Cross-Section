@@ -75,6 +75,7 @@ enum ErrorCodes
 #include "PlotUtils/reweighters/LowRecoil2p2hReweighter.h"
 #include "PlotUtils/reweighters/RPAReweighter.h"
 #include "PlotUtils/reweighters/MINOSEfficiencyReweighter.h"
+#include "PlotUtils/reweighters/AMUDISReweighter.h"
 #include "PlotUtils/TargetUtils.h"
 #pragma GCC diagnostic pop
 
@@ -383,7 +384,7 @@ int main(const int argc, const char** argv)
   MnvTunev1.emplace_back(new PlotUtils::LowRecoil2p2hReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::MINOSEfficiencyReweighter<CVUniverse, MichelEvent>());
   MnvTunev1.emplace_back(new PlotUtils::RPAReweighter<CVUniverse, MichelEvent>());
-  MnvTunev1.emplace_back(new PlotUtils::AMUDISReweighter<UNIVERSE, EVENT>());
+  MnvTunev1.emplace_back(new PlotUtils::AMUDISReweighter<CVUniverse, MichelEvent>());
 
   PlotUtils::Model<CVUniverse, MichelEvent> model(std::move(MnvTunev1));
 
