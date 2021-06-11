@@ -90,7 +90,7 @@ int main(const int argc, const char** argv)
   loop.runLoop();
 
   // Get the output histograms and save them to file
-  string geniefilename =  "GENIEXSECEXTRACT_" + playlistFile + ".root";
+  string geniefilename =  "GENIEXSECEXTRACT_" + playlistFile.substr(playlistFile.rfind("/")+1, playlistFile.find(".")) + ".root";
   TFile fout(geniefilename.c_str(), "RECREATE");
   for(uint i=0; i<loop.getXSecs().size(); ++i)
   {
