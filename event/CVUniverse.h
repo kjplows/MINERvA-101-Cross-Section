@@ -21,8 +21,8 @@
 class CVUniverse : public PlotUtils::MinervaUniverse {
 
   public:
-  #include "PlotUtils/SystCalcs/MuonFunctions.h" // GetMinosEfficiencyWeight
-  #include "PlotUtils/SystCalcs/TruthFunctions.h" //Getq3True
+  #include "PlotUtils/MuonFunctions.h" // GetMinosEfficiencyWeight
+  #include "PlotUtils/TruthFunctions.h" //Getq3True
   // ========================================================================
   // Constructor/Destructor
   // ========================================================================
@@ -189,7 +189,7 @@ class CVUniverse : public PlotUtils::MinervaUniverse {
 
   //Still needed for some systematics to compile, but shouldn't be used for reweighting anymore.
   protected:
-  #include "PlotUtils/SystCalcs/WeightFunctions.h" // Get*Weight
+  #include "PlotUtils/WeightFunctions.h" // Get*Weight
 };
 
 #endif
