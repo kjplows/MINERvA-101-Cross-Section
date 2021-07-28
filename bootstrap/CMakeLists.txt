@@ -23,29 +23,37 @@ endif()
 #  set(UPDATE_OPTION "UPDATE_DISCONNECTED ${DISABLE_AUTO_UPDATE}")
 #endif()
 
-ExternalProject_Add(PlotUtils
-                    CVS_REPOSITORY minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft
-                    CVS_MODULE Ana/PlotUtils
-                    ${CVS_DOWNLOAD_COMMAND}
-                    SOURCE_DIR "${SOURCE_CODE_DIR}/Ana/PlotUtils"
+ExternalProject_Add(MAT
+                    GIT_REPOSITORY git@github.com:MinervaExpt/MAT.git
+                    GIT_TAG main
+                    SOURCE_DIR "${SOURCE_CODE_DIR}/MAT"
+                    UPDATE_COMMAND ""
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE})
 
-ExternalProject_Add(UnfoldUtils
-                    CVS_REPOSITORY minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft
-                    CVS_MODULE Ana/UnfoldUtils
-                    ${CVS_DOWNLOAD_COMMAND}
-                    SOURCE_DIR "${SOURCE_CODE_DIR}/Ana/UnfoldUtils"
+ExternalProject_Add(MAT-MINERvA
+                    GIT_REPOSITORY git@github.com:MinervaExpt/MAT-MINERvA.git
+                    GIT_TAG main
+                    SOURCE_DIR "${SOURCE_CODE_DIR}/MAT-MINERvA"
+                    #UPDATE_COMMAND ""
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                    DEPENDS PlotUtils)
+                    UPDATE_COMMAND ""
+                    DEPENDS MAT)
+
+ExternalProject_Add(UnfoldUtils
+                    GIT_REPOSITORY git@github.com:MinervaExpt/UnfoldUtils.git
+                    GIT_TAG master
+                    ${CVS_DOWNLOAD_COMMAND}
+                    SOURCE_DIR "${SOURCE_CODE_DIR}/UnfoldUtils"
+                    UPDATE_COMMAND ""
+                    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+                    DEPENDS MAT MAT-MINERvA)
 
 ExternalProject_Add(GENIEXSecExtract
-                    CVS_REPOSITORY minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft
-                    CVS_MODULE GENIEXSecExtract
-                    ${CVS_DOWNLOAD_COMMAND}
+                    GIT_REPOSITORY git@github.com:MinervaExpt/GENIEXSecExtract.git
+                    GIT_TAG main
                     SOURCE_DIR "${SOURCE_CODE_DIR}/GENIEXSecExtract"
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                    DEPENDS PlotUtils)
-
+                    DEPENDS MAT MAT-MINERvA)
 
 #MParamFiles doesn't need to be built or installed.  It's a bunch of text and .root files that programs need to be able to find.
 #Nothing depends on MParamFiles to build, but it does need to be installed before much of libPlotUtils can be used.
@@ -53,10 +61,23 @@ ExternalProject_Add(MParamFiles
                     CVS_REPOSITORY minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft
                     CVS_MODULE MParamFiles
                     ${CVS_DOWNLOAD_COMMAND}
-                    SOURCE_DIR "${SOURCE_CODE_DIR}/MParamFiles"
+                    SOURCE_DIR "${CMAKE_INSTALL_PREFIX}/etc/MParamFiles" #Check out directly into install prefix
                     CONFIGURE_COMMAND ""
                     BUILD_COMMAND ""
                     INSTALL_COMMAND ""
+                    UPDATE_COMMAND ""
+                    )
+
+#The flux files and many of our reweights now live in this package.
+ExternalProject_Add(MATFluxAndReweightFiles
+                    CVS_REPOSITORY minervacvs@cdcvs.fnal.gov:/cvs/mnvsoft
+                    CVS_MODULE AnalysisFramework/Ana/MATFluxAndReweightFiles
+                    ${CVS_DOWNLOAD_COMMAND}
+                    SOURCE_DIR "${CMAKE_INSTALL_PREFIX}/etc/MATFluxAndReweightFiles" #Check out directly into install prefix
+                    CONFIGURE_COMMAND ""
+                    BUILD_COMMAND ""
+                    INSTALL_COMMAND ""
+                    UPDATE_COMMAND ""
                     )
 
 #Configure the tutorial itself from the source code in the parent directory.
@@ -68,10 +89,14 @@ ExternalProject_Add(MINERvA-101-Cross-Section
                     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_INSTALL_PREFIX} -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     UPDATE_COMMAND ""
                     PATCH_COMMAND ""
-                    DEPENDS PlotUtils UnfoldUtils GENIEXSecExtract)
+                    DEPENDS MAT MAT-MINERvA UnfoldUtils GENIEXSecExtract)
 
-#Put MParamFiles into the directory structure
-install(DIRECTORY ${SOURCE_CODE_DIR}/MParamFiles DESTINATION etc)
+#Make a symbolic link to MATFluxAndReweightFiles because Andrew didn't think about
+#naming it "data" before he created a bunch of CVS directories that only Rob can remove :(
+#Nota Bene: This may not work well on Windows.  If you need to do that one day, read https://stackoverflow.com/questions/35765106/symbolic-links-cmake/41037224
+#TODO: If /cvmfs exists, symlink to central MParamFiles and MATFluxAndReweightFiles instead of downloading them.
+#      Not entirely sure symlinks work between /cvmfs, BlueArc, and CONDIR_INPUT_DIR to be fair.
+install(CODE "EXECUTE_PROCESS( COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_INSTALL_PREFIX}/etc/MATFluxAndReweightFiles ${CMAKE_INSTALL_PREFIX}/lib/data )" )
 
 #Tell setup.sh about the installation directory of this package
 configure_file(setup.sh.in setup.sh @ONLY)

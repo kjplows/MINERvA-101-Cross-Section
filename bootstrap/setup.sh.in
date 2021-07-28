@@ -2,7 +2,9 @@ INSTALL_DIR=${MINERVA_PREFIX:-"@CMAKE_INSTALL_PREFIX@"}
 OLD_PATH=${PATH}
 OLD_LIBS=${LD_LIBRARY_PATH}
 
-source ${INSTALL_DIR}/bin/setup_PlotUtils.sh
+source ${INSTALL_DIR}/bin/setup_MAT.sh
+source ${INSTALL_DIR}/bin/setup_MAT-MINERvA.sh
+source ${INSTALL_DIR}/bin/setup_UnfoldUtils.sh
 source ${INSTALL_DIR}/bin/setup_MAT_IncPions.sh
 source ${INSTALL_DIR}/bin/setup_GENIEXSecExtract.sh
 

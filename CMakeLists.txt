@@ -47,8 +47,11 @@ endif()
 
 include(${ROOT_USE_FILE})
 
-find_package(PlotUtils REQUIRED)
-include_directories(${PlotUtils_INCLUDE_DIR})
+find_package(MAT REQUIRED)
+include_directories(${MAT_INCLUDE_DIR})
+
+find_package(MAT-MINERvA REQUIRED)
+include_directories(${MAT-MINERvA_INCLUDE_DIR})
 
 find_package(UnfoldUtils REQUIRED)
 include_directories(${UnfoldUtils_INCLUDE_DIR})
@@ -67,15 +70,15 @@ add_subdirectory(util)
 
 #Build main executables
 add_executable(runEventLoop runEventLoop.cpp)
-target_link_libraries(runEventLoop ${ROOT_LIBRARIES} util PlotUtils) #event cuts studies systematics)
+target_link_libraries(runEventLoop ${ROOT_LIBRARIES} util MAT MAT-MINERvA) #event cuts studies systematics)
 install(TARGETS runEventLoop DESTINATION bin)
 
 add_executable(ExtractCrossSection ExtractCrossSection.cpp)
-target_link_libraries(ExtractCrossSection ${ROOT_LIBRARIES} util PlotUtils UnfoldUtils)
+target_link_libraries(ExtractCrossSection ${ROOT_LIBRARIES} util MAT UnfoldUtils)
 install(TARGETS ExtractCrossSection DESTINATION bin)
 
 add_executable(runXSecLooper runXSecLooper.cpp)
-target_link_libraries(runXSecLooper ${ROOT_LIBRARIES} PlotUtils GENIEXSecExtract)
+target_link_libraries(runXSecLooper ${ROOT_LIBRARIES} MAT GENIEXSecExtract)
 install(TARGETS runXSecLooper DESTINATION bin)
 
 install(FILES backgroundStack.py PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE DESTINATION bin)
