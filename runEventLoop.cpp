@@ -5,8 +5,8 @@
 "\n*** USAGE ***\n"\
 "runEventLoop <dataPlaylist.txt> <mcPlaylist.txt>\n\n"\
 "*** Explanation ***\n"\
-"Reduce MasterAnaDev AnaTuples to event selection histograms to extract a\n"\
-"single-differential inclusive cross section for the 2021 MINERvA 101 tutorial.\n\n"\
+"MAD files reduced to event-selection histos\n"\
+"that supports my analysis for HNL in MINERvA. MC backgrounds specified here.\n\n"\
 "*** The Input Files ***\n"\
 "Playlist files are plaintext files with 1 file name per line.  Filenames may be\n"\
 "xrootd URLs or refer to the local filesystem.  The first playlist file's\n"\
@@ -58,6 +58,10 @@ enum ErrorCodes
 #include "cuts/q3RecoCut.h"
 #include "studies/Study.h"
 //#include "Binning.h" //TODO: Fix me
+
+//Custom cuts from me
+#include "cuts/JohnsCuts.h"
+#include "cuts/JohnsSignalDefinition.h"
 
 //PlotUtils includes
 #include "PlotUtils/makeChainWrapper.h"
@@ -149,6 +153,7 @@ void LoopAndFillEventSelection(
           for(auto& var: vars2D)
           {
             var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight);
+	    var->recoCorrelation->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight);
           }
         }
         else
@@ -343,8 +348,8 @@ int main(const int argc, const char** argv)
 
   const bool doCCQENuValidation = (reco_tree_name == "CCQENu"); //Enables extra histograms and might influence which systematics I use.
 
-  //const bool is_grid = false; //TODO: Are we going to put this back?  Gonzalo needs it iirc.
-  PlotUtils::MacroUtil options(reco_tree_name, mc_file_list, data_file_list, "minervame1A", true);
+  const bool is_grid = false;
+  PlotUtils::MacroUtil options(reco_tree_name, mc_file_list, data_file_list, "minervame1A", true, is_grid);
   options.m_plist_string = util::GetPlaylist(*options.m_mc, true); //TODO: Put GetPlaylist into PlotUtils::MacroUtil
 
   // You're required to make some decisions
@@ -359,22 +364,77 @@ int main(const int argc, const char** argv)
   PlotUtils::Cutter<CVUniverse, MichelEvent>::reco_t sidebands, preCuts;
   PlotUtils::Cutter<CVUniverse, MichelEvent>::truth_t signalDefinition, phaseSpace;
 
+  //==========================================================
+  // Declare cut & signal parameters here
+  //==========================================================
   const double minZ = 5980, maxZ = 8422, apothem = 850; //All in mm
-  preCuts.emplace_back(new reco::ZRange<CVUniverse, MichelEvent>("Tracker", minZ, maxZ));
-  preCuts.emplace_back(new reco::Apothem<CVUniverse, MichelEvent>(apothem));
-  preCuts.emplace_back(new reco::MaxMuonAngle<CVUniverse, MichelEvent>(20.));
-  preCuts.emplace_back(new reco::HasMINOSMatch<CVUniverse, MichelEvent>());
-  preCuts.emplace_back(new reco::NoDeadtime<CVUniverse, MichelEvent>(1, "Deadtime"));
-  preCuts.emplace_back(new reco::IsNeutrino<CVUniverse, MichelEvent>());
-                                                                                                                                                   
-  signalDefinition.emplace_back(new truth::IsNeutrino<CVUniverse>());
-  signalDefinition.emplace_back(new truth::IsCC<CVUniverse>());
-                                                                                                                                                   
-  phaseSpace.emplace_back(new truth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
-  phaseSpace.emplace_back(new truth::Apothem<CVUniverse>(apothem));
-  phaseSpace.emplace_back(new truth::MuonAngle<CVUniverse>(20.));
-  phaseSpace.emplace_back(new truth::PZMuMin<CVUniverse>(1500.));
-                                                                                                                                                   
+  const double maxMuTheta = 20.; //deg
+  //const double minEnu = 2.0, maxEnu = 20.0; //GeV, see Alex's thesis
+  const double minEnu = 2.0, maxEnu = 50.0, medEnu = 20.0; //GeV
+  //const double minW = 0.0, maxW = 1.4; // GeV [LOW]
+  //const double minW = 1.4, maxW = 2.0; // GeV [MED]
+  const double minW = 2.0, maxW = 1e+5; // GeV [HIGH]
+  const int pPDG = 2212, nPDG = 2112, pipPDG = 211, pimPDG = -211, pi0PDG = 111;
+
+  //==========================================================
+  // The actual cuts. Use Jreco and Jtruth namespaces.
+  //==========================================================
+  // Data cuts actually *remove* events that don't pass from loop
+  //==========================================================
+  preCuts.emplace_back(new Jreco::ZRange<CVUniverse, MichelEvent>("Tracker", minZ, maxZ));
+  preCuts.emplace_back(new Jreco::Apothem<CVUniverse, MichelEvent>(apothem));
+  preCuts.emplace_back(new Jreco::MaxMuonAngle<CVUniverse, MichelEvent>(maxMuTheta));
+  preCuts.emplace_back(new Jreco::HasMINOSMatch<CVUniverse, MichelEvent>());
+  preCuts.emplace_back(new Jreco::NoDeadtime<CVUniverse, MichelEvent>(1, "Deadtime"));
+  preCuts.emplace_back(new Jreco::MINOSNumu<CVUniverse, MichelEvent>());
+  //preCuts.emplace_back(new Jreco::Has1PiOrP<CVUniverse, MichelEvent>());
+  preCuts.emplace_back(new Jreco::EnuRange<CVUniverse, MichelEvent>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
+  preCuts.emplace_back(new Jreco::WRange<CVUniverse, MichelEvent>(Form("%1.1f <= W [GeV] < %1.1f", minW, maxW), minW, maxW));
+  // if I cut out > 1 PiOrP then I should also cut out neutrons etc for consistency...
+  //TODO: Add pion score / LLR
+  //TODO: Add vtx energy
+  //TODO: Add |t|
+  //==========================================================
+  // Sidebands are specific non-signal events that I wanna analyse
+  //==========================================================
+  
+  //==========================================================
+  // Signal definition sifts through data-OK evts
+  //==========================================================
+  signalDefinition.emplace_back(new Jtruth::IsNumu<CVUniverse>());
+  signalDefinition.emplace_back(new Jtruth::IsCC<CVUniverse>());
+  //signalDefinition.emplace_back(new Jtruth::IsOther<CVUniverse>());
+  //------------------------------------------
+  //signalDefinition.emplace_back(new Jtruth::ThreeFSParticles<CVUniverse>());
+  //signalDefinition.emplace_back(new Jtruth::AtLeastFourFSParticles<CVUniverse>());
+  //signalDefinition.emplace_back(new Jtruth::IsCOH<CVUniverse>());
+  //signalDefinition.emplace_back(new Jtruth::IsQE<CVUniverse>());
+  signalDefinition.emplace_back(new Jtruth::IsNotQEOrCOH<CVUniverse>());
+  //------------------------------------------
+  // -- pion bands
+  //signalDefinition.emplace_back(new Jtruth::NTrueParticles<CVUniverse>("0 pi+", 0, pipPDG));
+  //signalDefinition.emplace_back(new Jtruth::NTrueParticles<CVUniverse>("2 pi0", 2, pi0PDG));
+  //signalDefinition.emplace_back(new Jtruth::AtLeastNParticles<CVUniverse>(">= 2pi+", 2, pipPDG));
+  //signalDefinition.emplace_back(new Jtruth::FormalNegationOfPionBand<CVUniverse>());
+  // -- nucleon bands
+  //signalDefinition.emplace_back(new Jtruth::NTrueParticles<CVUniverse>("0 p", 0, pPDG));
+  //signalDefinition.emplace_back(new Jtruth::NTrueParticles<CVUniverse>("0 n", 0, nPDG));
+  //signalDefinition.emplace_back(new Jtruth::NumNucleons<CVUniverse>("1 nucleon", 1));
+  //signalDefinition.emplace_back(new Jtruth::NNucleons<CVUniverse>());
+  // -- junk?
+  //signalDefinition.emplace_back(new Jtruth::JunkParticlesAllowed<CVUniverse>("Allow junk particles: FALSE", false));
+  //signalDefinition.emplace_back(new Jtruth::FormalNegationOfJunkNotAllowed<CVUniverse>());
+  
+  //==========================================================
+  // Phase space rejects events that are likely poorly reco'd
+  //==========================================================
+  phaseSpace.emplace_back(new Jtruth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
+  phaseSpace.emplace_back(new Jtruth::Apothem<CVUniverse>(apothem));
+  phaseSpace.emplace_back(new Jtruth::MuonAngle<CVUniverse>(maxMuTheta));
+  phaseSpace.emplace_back(new Jtruth::EnuRange<CVUniverse>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
+  phaseSpace.emplace_back(new Jtruth::WRange<CVUniverse>(Form("%1.1f <= W [GeV] < %1.1f", minW, maxW), minW, maxW));
+  //==========================================================
+  
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
 
   std::vector<std::unique_ptr<PlotUtils::Reweighter<CVUniverse, MichelEvent>>> MnvTunev1;
@@ -406,18 +466,50 @@ int main(const int argc, const char** argv)
   truth_bands["cv"] = {new CVUniverse(options.m_truth)};
 
   std::vector<double> dansPTBins = {0, 0.075, 0.15, 0.25, 0.325, 0.4, 0.475, 0.55, 0.7, 0.85, 1, 1.25, 1.5, 2.5, 4.5},
-                      dansPzBins = {1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40, 60},
-                      robsEmuBins = {0,1,2,3,4,5,7,9,12,15,18,22,36,50,75,100,120},
-                      robsRecoilBins;
+      dansPzBins = {1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 9, 10, 15, 20, 40, 60},
+      robsEmuBins = {0,1,2,3,4,5,7,9,12,15,18,22,36,50,75,100,120},
+      robsRecoilBins,
+      johnsQ2Bins = {0., 0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0},
+      //johnsTBins = {0., 1.e+2, 2.e+2, 3.e+2, 4.e+2, 5.e+2, 6.e+2, 7.e+2, 8.e+2, 9.e+2, 1.e+3, 1.5e+3, 2.e+3, 2.5e+3, 3.e+3}, // NO THAT WAS FOR SQRT(|t|)!!
+      johnsTBins = {0., 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.},
+      johnsFineTBins = {0., 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.325, 0.35, 0.375, 0.4, 0.425, 0.45, 0.475, 0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.7, 0.725, 0.75, 0.775, 0.8, 0.825, 0.85, 0.875, 0.9, 0.925, 0.95, 0.975, 1.},
+      johnsEmuBins = {0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20.},
+      johnsEhadBins = {0., 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0},
+      johnsEnuBins = {0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 10.5, 11., 11.5, 12., 12.5, 13., 13.5, 14., 14.5, 15., 15.5, 16., 16.5, 17., 17.5, 18., 18.5, 19., 19.5, 20.},
+      johnsThetaMuPiBins = {0., 1., 2., 3., 4., 5., 10., 15., 20., 25., 30., 40., 50.},
+      johnsThetaMuBins = {0.,2.,4.,6.,8.,10.,12.,14.,16.,18.,20.},
+      johnsThetaHadBins = {0.,2.,4.,6.,8.,10.,12.,14.,16.,18.,20.,30.,40.,55.,70.},
+      johnsWBins = {0., 500., 600., 700., 800., 900., 1000., 1100., 1200., 1300., 1400., 1500., 1600., 1700., 1800., 1900., 2000., 2200., 2400., 2600., 2800., 3000.},
+      johnsSysWBins = {100., 150., 200., 250., 300., 350., 400., 450., 500., 600., 700., 800., 900., 1000., 1250., 1500., 2000., 2500., 3000.},
+      // now direct branches
+      johnsScoreBins = {0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
 
   const double robsRecoilBinWidth = 50; //MeV
   for(int whichBin = 0; whichBin < 100 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
 
   std::vector<Variable*> vars = {
-    new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
+      new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), // 0
+      new Variable("pzmu", "p_{||, #mu} [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue), // 1
+      new Variable("Emu",  "E_{#mu} [GeV]", johnsEmuBins, &CVUniverse::GetEmuGeV, &CVUniverse::GetElepTrueGeV), // 2
+      new Variable("theta_mu", "#theta_{#mu}", johnsThetaMuBins, &CVUniverse::GetThetamuDeg, &CVUniverse::GetThetalepTrueDeg), // 3
+      new Variable("Ehad", "E_{had} [GeV]", johnsEhadBins, &CVUniverse::GetEhadGeV, &CVUniverse::GetEhadTrueGeV), // 4
+      new Variable("theta_had", "#theta_{had}", johnsThetaHadBins, &CVUniverse::GetHadronThetaDeg, &CVUniverse::GetHadronThetaTrueDeg), // 5
+      new Variable("theta_muhad", "#theta_{#mu_had}", johnsThetaMuPiBins, &CVUniverse::GetThetaMuHadVar, &CVUniverse::GetThetaMuHadTrueVar), // 6
+      new Variable("M_muhad", "M_muhad [MeV/c^{2}]", johnsSysWBins, &CVUniverse::GetMuHadW, &CVUniverse::GetMuHadWTrue), // 7
+      new Variable("Enu",  "E_{#nu} [GeV]", johnsEnuBins, &CVUniverse::GetEnuGeV, &CVUniverse::GetEnuTrueGeV), // 8
+      new Variable("Q2",   "Q^{2} [(GeV/c)^{2}]", johnsQ2Bins, &CVUniverse::GetQ2GeV, &CVUniverse::GetQ2TrueGeV), // 9 
+    //new Variable("t",  "|t| [(MeV/c)^{2}]", johnsTBins, &CVUniverse::GetAbsT, &CVUniverse::GetAbsTTrue),
+      new Variable("t",  "|t| [(GeV/c)^{2}]", johnsTBins, &CVUniverse::GetAbsTGeV, &CVUniverse::GetAbsTTrueGeV), // 10
+      new Variable("Alex_t",  "|t_{COH-like}| [(GeV/c)^{2}]", johnsTBins, &CVUniverse::GetAlexAbsTGeV, &CVUniverse::GetAlexAbsTTrueGeV), // 11
+      new Variable("W", "W_rest [MeV/c^{2}]", johnsWBins, &CVUniverse::GetW, &CVUniverse::GetTrueExperimentersW), // 12
+    // now direct branches
+    new Variable("piScore", "pion score", johnsScoreBins, &CVUniverse::GetPionScore, &CVUniverse::GetQ2TrueGeV), //with truth being nonsense! We just want event distribution
   };
 
-  std::vector<Variable2D*> vars2D;
+  std::vector<Variable2D*> vars2D = {
+      new Variable2D(*vars[11], *vars[10])
+  };
+  
   if(doCCQENuValidation)
   {
     std::cerr << "Detected that tree name is CCQENu.  Making validation histograms.\n";
@@ -435,6 +527,11 @@ int main(const int argc, const char** argv)
   data_error_bands["cv"] = data_band;
   
   std::vector<Study*> data_studies;
+
+  //remind myself which variables I am using
+  std::cout << "====================================================\n\tUsing the following variables:\n";
+  for(auto& var: vars) std::cout << (var->GetName()).c_str() << " ";
+  std::cout << "\n==================================================\n\n" << std::endl;
 
   for(auto& var: vars) var->InitializeMCHists(error_bands, truth_bands);
   for(auto& var: vars) var->InitializeDATAHists(data_band);
