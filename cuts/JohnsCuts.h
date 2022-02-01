@@ -20,185 +20,38 @@ namespace std {
 // Author: John Plows, U. of Oxford
 // komninosjohn.plows@physics.ox.ac.uk
 //===========================================================
-
-//===========================================================
-// Neutrino, antineutrino
-// MINOS QP significance gives us QP < 0 ? Nu : Nubar
-// I presume this is just the Q/P ratio so checks out
+// Reorganised to follow Alex Ramirez's COH analysis
 //===========================================================
 
 namespace Jreco
 {
-    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
-    class MINOSNumu: public PlotUtils::Cut<UNIVERSE, EVENT>
-    {
-    public:
-	MINOSNumu(): PlotUtils::Cut<UNIVERSE, EVENT>("MINOS Q/P < 0") {}
-	
-    private:
-	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
-	{
-	    return univ.GetMuonQP() < 0; 
-	}
-    };
+
+    // -- Fiducial volume selection
     
-    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
-    class MINOSNumubar: public PlotUtils::Cut<UNIVERSE, EVENT>
-    {
-    public:
-	MINOSNumubar(): PlotUtils::Cut<UNIVERSE, EVENT>("MINOS Q/P > 0") {}
-    private:
-	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
-	{
-	    return univ.GetMuonQP() > 0; 
-	}
-    };
-    
-    //===========================================================
-    // Need MINOS match!
-    //===========================================================
-    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
-    class HasMINOSMatch: public PlotUtils::Cut<UNIVERSE, EVENT>
-    {
-    public:
-	HasMINOSMatch(): PlotUtils::Cut<UNIVERSE, EVENT>("Has MINOS match") {}
-	  
-    private:
-	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
-	{
-	    return univ.IsMinosMatchMuon();
-	}
-    };
-    
-    //============================================================
-    // Stuff related to MINOS acceptance etc.
-    //============================================================
-    
-    //muon angle input DEG output RAD
-    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
-    class MaxMuonAngle: public PlotUtils::Cut<UNIVERSE, EVENT>
-    {
-    public:
-	MaxMuonAngle(const double max): PlotUtils::Cut<UNIVERSE, EVENT>(std::string("Muon Theta < ") + std::to_string(max)), fMax(max*M_PI/180.) {}
-	  
-    private:
-	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
-	{
-	    return univ.GetThetamu() < fMax;
-	}
-	  
-	const double fMax; //radians
-    };
+    // -- ZRange gives allowed z in MINERvA coords
 
-    //===========================================================
-    // Reco needs 1 pion
-    //===========================================================
-   
-    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
-    class Has1Pion: public PlotUtils::Cut<UNIVERSE, EVENT>
-    {
-    public:
-	// C'tor
-	Has1Pion(): PlotUtils::Cut<UNIVERSE, EVENT>("Has 1 pion") {}
-      
-    private:
-	// 1 hadron track, no secondaries, pion score > proton score
-	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
-	{
-	    double NONSENSE = -999.;
-	    
-	    // old selection based on dEdXTool, not good - use MAD's LLR when available!
-	    // pion score and proton score
-	    double piScore = univ.GetPionScore();
-	    double prScore = univ.GetProtonScore();
-	    // need to be not nonsense
-	    if(piScore <= NONSENSE) return false;
-	    // want no secondaries
-	    int nSec = 0;
-	    nSec = univ.GetNSecondaryHadrons();
-	    if(nSec > 0) return false;
-	    // now only 1 pion. Return TRUE if pion score > proton score
-	    return piScore >= prScore;
-	}
-    };
-
-    //isolate CCQE as well!
-    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
-    class Has1Proton: public PlotUtils::Cut<UNIVERSE, EVENT>
-    {
-    public:
-	// C'tor
-	Has1Proton(): PlotUtils::Cut<UNIVERSE, EVENT>("Has 1 proton") {}
-      
-    private:
-	// 1 hadron track, no secondaries, pion score > proton score
-	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
-	{
-	    double NONSENSE = -999.;
-
-	    // old selection based on dEdXTool, not good  use MAD's LLR when available!
-	    // pion score and proton score
-	    double piScore = univ.GetPionScore();
-	    double prScore = univ.GetProtonScore();
-	    // need to be not nonsense
-	    if(piScore <= NONSENSE) return false;
-	    // want no secondaries
-	    int nSec = 0;
-	    nSec = univ.GetNSecondaryHadrons();
-	    if(nSec > 0) return false;
-	    // now only 1 pion. Return TRUE if pion score > proton score
-	    return piScore <= prScore;
-	}
-    };
-
-    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
-    class Has1PiOrP: public PlotUtils::Cut<UNIVERSE, EVENT>
-    {
-    public:
-	// C'tor
-	Has1PiOrP(): PlotUtils::Cut<UNIVERSE, EVENT>("Has 1 pi+ or p") {}
-      
-    private:
-	// 1 hadron (= pion or proton? what about K?) track, no secondaries
-	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
-	{
-	    double NONSENSE = -999.;
-	    //double NONSENSE = -101.;
-
-	    // pion score and proton score
-	    double piScore = univ.GetPionScore();
-	    // need to be not nonsense
-	    if(piScore <= NONSENSE) return false;
-	    /*
-	    double hadScore = univ.GetHadronLLR();
-	    if(hadScore == NONSENSE) return false;
-	    */
-	    // want no secondaries
-	    int nSec = univ.GetNSecondaryHadrons();
-	    return nSec == 0;
-	}
-    };
-
-    
     template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
     class ZRange: public PlotUtils::Cut<UNIVERSE, EVENT>
     {
+	
     public:
 	ZRange(const std::string& name, const double zMin, const double zMax): PlotUtils::Cut<UNIVERSE, EVENT>(name), fMin(zMin), fMax(zMax) {}
-	  
+	
     private:
 	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
-	{
-	    return univ.GetVertexZ() >= fMin && univ.GetVertexZ() <= fMax;
-	}
-	  
+	{ return univ.GetVertexZ() >= fMin && univ.GetVertexZ() <= fMax; }
+	
 	const double fMin;
 	const double fMax;
-    };
+	
+    }; // class ZRange
+
+    // -- Apothem gives the hexagonal region
     
     template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
     class Apothem: public PlotUtils::Cut<UNIVERSE, EVENT>
     {
+	
     public:
 	Apothem(const double apothem): PlotUtils::Cut<UNIVERSE, EVENT>(std::string("Apothem ") + std::to_string(apothem)), fApothem(apothem), fSlope(1./sqrt(3.)) {} //A regular hexagon has angles of 2*M_PI/3, so I can find this is 1/tan(M_PI/3.) 
 	
@@ -211,26 +64,92 @@ namespace Jreco
 	}
 	  
 	const double fApothem;
-	const double fSlope; 
-    };
+	const double fSlope;
+	
+    }; // class Apothem
     
-    //define W sidebands. Use min and max (GeV!)
+    // -- MINOS acceptance
+
     template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
-    class WRange: public PlotUtils::Cut<UNIVERSE, EVENT>
+    class HasMINOSMatch: public PlotUtils::Cut<UNIVERSE, EVENT>
+    {
+	
+    public:
+	HasMINOSMatch(): PlotUtils::Cut<UNIVERSE, EVENT>("Has MINOS match") {}
+	  
+    private:
+	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
+	{ return univ.IsMinosMatchMuon(); }
+	
+    }; // class HasMINOSMatch
+
+    // -- No dead time
+    
+#ifndef __GCCXML__
+    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
+    using NoDeadtime = PlotUtils::Maximum<UNIVERSE, int, &UNIVERSE::GetTDead, EVENT>; //Andrew's fancy template notation
+#endif
+
+    // -- Neutrino mode selection
+
+    // -- mu ?
+    
+    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
+    class MINOSNumu: public PlotUtils::Cut<UNIVERSE, EVENT>
     {
     public:
-	WRange(const std::string& name, const double WMin, const double WMax): PlotUtils::Cut<UNIVERSE, EVENT>(name), fMin(WMin), fMax(WMax) {}
+	MINOSNumu(): PlotUtils::Cut<UNIVERSE, EVENT>("MINOS Numu") {}
 	
     private:
 	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
-	{
-	    return univ.GetWGeV() >= fMin && univ.GetWGeV() < fMax;
-	}
-	  
-	const double fMin;
-	const double fMax;
-    };
+	{ return univ.GetMuonQP() < 0; }
+	
+    }; // class MINOSNumu
+
+    // -- mubar ?
     
+    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
+    class MINOSNumubar: public PlotUtils::Cut<UNIVERSE, EVENT>
+    {
+    public:
+	MINOSNumubar(): PlotUtils::Cut<UNIVERSE, EVENT>("MINOS Numubar") {}
+	
+    private:
+	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
+	{ return univ.GetMuonQP() > 0; }
+	
+    }; // class MINOSNumubar
+
+    // -- One hadron only please!
+
+    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
+    class OneHadron: public PlotUtils::Cut<UNIVERSE, EVENT>
+    {
+    public:
+	OneHadron(): PlotUtils::Cut<UNIVERSE, EVENT>("One hadron") {}
+
+    private:
+	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
+	{ return univ.GetNHadrons() == 1; }
+
+    }; // class OneHadron
+    
+    // -- Hadron containment in tracker
+    
+    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
+    class ContainedHadron: public PlotUtils::Cut<UNIVERSE, EVENT>
+    {
+    public:
+	ContainedHadron(): PlotUtils::Cut<UNIVERSE, EVENT>("ID-Contained hadron") {}
+	
+    private:
+	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
+	{ return univ.HadronIsExitingID() == 0; }
+	
+    }; // class ContainedHadron
+
+    // -- Neutrino energy
+
     template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
     class EnuRange: public PlotUtils::Cut<UNIVERSE, EVENT>
     {
@@ -245,12 +164,31 @@ namespace Jreco
 	  
 	const double fMin;
 	const double fMax;
-    };
+	
+    }; // class EnuRange
 
-#ifndef __GCCXML__
+    // -- PID selection
+
+    // -- Is pion: log(L_pi) >= log(L_p) ==> L_pi >= L_p
+    
     template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
-    using NoDeadtime = PlotUtils::Maximum<UNIVERSE, int, &UNIVERSE::GetTDead, EVENT>; //Andrew's fancy template notation
-#endif
-}
+    class IsPion: public PlotUtils::Cut<UNIVERSE, EVENT>
+    {
+    public:
+	IsPion(): PlotUtils::Cut<UNIVERSE, EVENT>("Hadron is pion") {}
+
+    private:
+	bool checkCut(const UNIVERSE& univ, EVENT& /*evt*/) const override
+	{
+	    return univ.GetHadronLLR() >= 0.0;
+	}
+	
+    }; // class IsPion
+
+    // -- E-vtx cut pending distributions of COH evts & cuts up to here
+
+    // -- |t| cut pending distributions
+    
+} // namespace Jreco
 
 #endif //#ifndef JOHNSCUTS_H

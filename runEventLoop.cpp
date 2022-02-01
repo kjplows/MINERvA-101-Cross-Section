@@ -153,7 +153,7 @@ void LoopAndFillEventSelection(
           for(auto& var: vars2D)
           {
             var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight);
-	    var->recoCorrelation->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight);
+	    //var->recoCorrelation->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight);
           }
         }
         else
@@ -349,7 +349,8 @@ int main(const int argc, const char** argv)
   const bool doCCQENuValidation = (reco_tree_name == "CCQENu"); //Enables extra histograms and might influence which systematics I use.
 
   const bool is_grid = false;
-  PlotUtils::MacroUtil options(reco_tree_name, mc_file_list, data_file_list, "minervame1A", true, is_grid);
+  //PlotUtils::MacroUtil options(reco_tree_name, mc_file_list, data_file_list, "minervame1A", true, is_grid);
+  PlotUtils::MacroUtil options(reco_tree_name, mc_file_list, data_file_list, "minervame1A", true);
   options.m_plist_string = util::GetPlaylist(*options.m_mc, true); //TODO: Put GetPlaylist into PlotUtils::MacroUtil
 
   // You're required to make some decisions
@@ -383,15 +384,13 @@ int main(const int argc, const char** argv)
   //==========================================================
   preCuts.emplace_back(new Jreco::ZRange<CVUniverse, MichelEvent>("Tracker", minZ, maxZ));
   preCuts.emplace_back(new Jreco::Apothem<CVUniverse, MichelEvent>(apothem));
-  preCuts.emplace_back(new Jreco::MaxMuonAngle<CVUniverse, MichelEvent>(maxMuTheta));
-  preCuts.emplace_back(new Jreco::HasMINOSMatch<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::NoDeadtime<CVUniverse, MichelEvent>(1, "Deadtime"));
+  preCuts.emplace_back(new Jreco::HasMINOSMatch<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::MINOSNumu<CVUniverse, MichelEvent>());
-  //preCuts.emplace_back(new Jreco::Has1PiOrP<CVUniverse, MichelEvent>());
+  preCuts.emplace_back(new Jreco::OneHadron<CVUniverse, MichelEvent>());
+  preCuts.emplace_back(new Jreco::ContainedHadron<CVUniverse, MichelEvent>());
+  preCuts.emplace_back(new Jreco::IsPion<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::EnuRange<CVUniverse, MichelEvent>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
-  preCuts.emplace_back(new Jreco::WRange<CVUniverse, MichelEvent>(Form("%1.1f <= W [GeV] < %1.1f", minW, maxW), minW, maxW));
-  // if I cut out > 1 PiOrP then I should also cut out neutrons etc for consistency...
-  //TODO: Add pion score / LLR
   //TODO: Add vtx energy
   //TODO: Add |t|
   //==========================================================
@@ -430,7 +429,7 @@ int main(const int argc, const char** argv)
   //==========================================================
   phaseSpace.emplace_back(new Jtruth::ZRange<CVUniverse>("Tracker", minZ, maxZ));
   phaseSpace.emplace_back(new Jtruth::Apothem<CVUniverse>(apothem));
-  phaseSpace.emplace_back(new Jtruth::MuonAngle<CVUniverse>(maxMuTheta));
+  //phaseSpace.emplace_back(new Jtruth::MuonAngle<CVUniverse>(maxMuTheta));
   phaseSpace.emplace_back(new Jtruth::EnuRange<CVUniverse>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
   phaseSpace.emplace_back(new Jtruth::WRange<CVUniverse>(Form("%1.1f <= W [GeV] < %1.1f", minW, maxW), minW, maxW));
   //==========================================================
@@ -484,12 +483,16 @@ int main(const int argc, const char** argv)
       // now direct branches
       johnsScoreBins = {0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
 
+  std::vector<double> johnsEvtxBins, johnsERecoilBins;
+  for(Int_t j = 0; j < 100; j++){ double elo = j * 5.0; johnsEvtxBins.push_back(elo); johnsERecoilBins.push_back(elo); }
+  johnsEvtxBins.push_back(500.0); johnsERecoilBins.push_back(500.0);
+
   const double robsRecoilBinWidth = 50; //MeV
   for(int whichBin = 0; whichBin < 100 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
 
   std::vector<Variable*> vars = {
       new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), // 0
-      new Variable("pzmu", "p_{||, #mu} [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue), // 1
+      /* new Variable("pzmu", "p_{||, #mu} [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue), // 1
       new Variable("Emu",  "E_{#mu} [GeV]", johnsEmuBins, &CVUniverse::GetEmuGeV, &CVUniverse::GetElepTrueGeV), // 2
       new Variable("theta_mu", "#theta_{#mu}", johnsThetaMuBins, &CVUniverse::GetThetamuDeg, &CVUniverse::GetThetalepTrueDeg), // 3
       new Variable("Ehad", "E_{had} [GeV]", johnsEhadBins, &CVUniverse::GetEhadGeV, &CVUniverse::GetEhadTrueGeV), // 4
@@ -498,17 +501,19 @@ int main(const int argc, const char** argv)
       new Variable("M_muhad", "M_muhad [MeV/c^{2}]", johnsSysWBins, &CVUniverse::GetMuHadW, &CVUniverse::GetMuHadWTrue), // 7
       new Variable("Enu",  "E_{#nu} [GeV]", johnsEnuBins, &CVUniverse::GetEnuGeV, &CVUniverse::GetEnuTrueGeV), // 8
       new Variable("Q2",   "Q^{2} [(GeV/c)^{2}]", johnsQ2Bins, &CVUniverse::GetQ2GeV, &CVUniverse::GetQ2TrueGeV), // 9 
-    //new Variable("t",  "|t| [(MeV/c)^{2}]", johnsTBins, &CVUniverse::GetAbsT, &CVUniverse::GetAbsTTrue),
+      */ new Variable("Evtx", "E_{vtx} [MeV]", johnsEvtxBins, &CVUniverse::GetEVtx, &CVUniverse::GetEhadTrue), // truth is nonsense
+      new Variable("Erecoil", "E_{recoil} [MeV]", johnsERecoilBins, &CVUniverse::GetERecoilVtx150mm, &CVUniverse::GetEhadTrue), /* // truth is nonsense
       new Variable("t",  "|t| [(GeV/c)^{2}]", johnsTBins, &CVUniverse::GetAbsTGeV, &CVUniverse::GetAbsTTrueGeV), // 10
       new Variable("Alex_t",  "|t_{COH-like}| [(GeV/c)^{2}]", johnsTBins, &CVUniverse::GetAlexAbsTGeV, &CVUniverse::GetAlexAbsTTrueGeV), // 11
       new Variable("W", "W_rest [MeV/c^{2}]", johnsWBins, &CVUniverse::GetW, &CVUniverse::GetTrueExperimentersW), // 12
     // now direct branches
     new Variable("piScore", "pion score", johnsScoreBins, &CVUniverse::GetPionScore, &CVUniverse::GetQ2TrueGeV), //with truth being nonsense! We just want event distribution
+      */
   };
 
-  std::vector<Variable2D*> vars2D = {
+  std::vector<Variable2D*> vars2D; /* = {
       new Variable2D(*vars[11], *vars[10])
-  };
+      }; */
   
   if(doCCQENuValidation)
   {

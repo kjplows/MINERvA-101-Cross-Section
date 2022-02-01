@@ -81,14 +81,19 @@ public:
  
     double GetQ2GeV() const
     {
-	//return GetQ2Reco()/(1000. * 1000.);
-	//return GetDouble((GetAnaToolName()+"_Q2_CCQE").c_str()) / 1e+6;
 	return GetQ2() / 1e+6;
     }
 
     double GetQ2TrueGeV() const
     {
 	return GetTrueExperimentersQ2()/(1000. * 1000.);
+    }
+
+    // where is primary hadron going
+
+    double HadronIsExitingID() const
+    {
+	return GetInt( (GetAnaToolName()+"_hadron_isExiting").c_str() );
     }
 
     // Topology
@@ -111,6 +116,11 @@ public:
     int GetNSecondaryHadrons() const
     {
 	return GetInt((GetAnaToolName()+"_sec_protons_pion_scores_sz").c_str());
+    }
+
+    int GetNHadrons() const
+    {
+	return GetInt( (GetAnaToolName()+"_hadron_number").c_str() );
     }
 
     int GetNPartTrue(const int PDGCode) const
@@ -224,6 +234,19 @@ public:
     //============================================
 
     // reco
+
+    double GetEVtx() const // MeV
+    {
+	double EVTX = GetDouble("vtx_blobs_energy");
+	double EISO = GetDouble("vtx_iso_blobs_energy_outside_radius"); // 150 mm by default
+	return EVTX - EISO;
+    }
+
+    double GetERecoilVtx150mm() const // MeV
+    {
+	double EVNM = GetDouble("recoil_energy_nonmuon_vtx150mm");
+	return EVNM;
+    }
 
     double GetEhad() const //MeV
     {
