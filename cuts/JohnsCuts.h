@@ -187,6 +187,27 @@ namespace Jreco
 
     // -- E-vtx cut pending distributions of COH evts & cuts up to here
 
+    // -- Testing various Erecoil branch cuts @ different values here.
+
+    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
+    class VtxECut: public PlotUtils::Cut<UNIVERSE, EVENT>
+    {
+    public:
+	VtxECut( const std::string & name,
+		 double Elow, double Ehigh ):
+	    PlotUtils::Cut<UNIVERSE, EVENT>(name), fElow(Elow), fEhigh(Ehigh) {}
+
+    private:
+	bool checkCut(const UNIVERSE& univ, EVENT & /* evt */) const override
+	{
+	    const double EVTX = univ.GetERecoilVtx200mm();
+	    return ( fElow <= EVTX && fEhigh >= EVTX );
+	}
+
+	double fElow, fEhigh;
+	
+    }; // class VtxECut
+
     // -- |t| cut pending distributions
     
 } // namespace Jreco

@@ -242,9 +242,45 @@ public:
 	return EVTX - EISO;
     }
 
+    double GetERecoilVtx0mm() const // MeV
+    {
+	double EVNM = GetDouble("recoil_energy_nonmuon_vtx0mm");
+	return EVNM;
+    }
+
+    double GetERecoilVtx50mm() const // MeV
+    {
+	double EVNM = GetDouble("recoil_energy_nonmuon_vtx50mm");
+	return EVNM;
+    }
+
+    double GetERecoilVtx100mm() const // MeV
+    {
+	double EVNM = GetDouble("recoil_energy_nonmuon_vtx100mm");
+	return EVNM;
+    }
+
     double GetERecoilVtx150mm() const // MeV
     {
 	double EVNM = GetDouble("recoil_energy_nonmuon_vtx150mm");
+	return EVNM;
+    }
+    
+    double GetERecoilVtx200mm() const // MeV
+    {
+	double EVNM = GetDouble("recoil_energy_nonmuon_vtx200mm");
+	return EVNM;
+    }
+
+    double GetERecoilVtx250mm() const // MeV
+    {
+	double EVNM = GetDouble("recoil_energy_nonmuon_vtx250mm");
+	return EVNM;
+    }
+
+    double GetERecoilVtx300mm() const // MeV
+    {
+	double EVNM = GetDouble("recoil_energy_nonmuon_vtx300mm");
 	return EVNM;
     }
 
