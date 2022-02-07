@@ -372,9 +372,14 @@ int main(const int argc, const char** argv)
   const double maxMuTheta = 20.; //deg
   //const double minEnu = 2.0, maxEnu = 20.0; //GeV, see Alex's thesis
   const double minEnu = 2.0, maxEnu = 50.0, medEnu = 20.0; //GeV
-  //const double minW = 0.0, maxW = 1.4; // GeV [LOW]
+  const double minW = 0.0, maxW = 1.4; // GeV [LOW]
   //const double minW = 1.4, maxW = 2.0; // GeV [MED]
-  const double minW = 2.0, maxW = 1e+5; // GeV [HIGH]
+  //const double minW = 2.0, maxW = 1e+5; // GeV [HIGH]
+
+  const int distmm = 200; // up to how far from vtx do we look for energy depositions
+  // note this isn't an argument in the actual Cut, you'll have to modify manually
+  const double vtxELow = 10.0, vtxEHigh = 60.0; // highest by eff * pur
+  
   const int pPDG = 2212, nPDG = 2112, pipPDG = 211, pimPDG = -211, pi0PDG = 111;
 
   //==========================================================
@@ -391,7 +396,8 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new Jreco::ContainedHadron<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::IsPion<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::EnuRange<CVUniverse, MichelEvent>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
-  //TODO: Add vtx energy
+  //WIP: testing Evtx
+  preCuts.emplace_back(new Jreco::VtxECut<CVUniverse, MichelEvent>(Form("%1.1f <= E_vtx (%d mm) <= %1.1f [MeV]", vtxELow, distmm, vtxEHigh), vtxELow, vtxEHigh));
   //TODO: Add |t|
   //==========================================================
   // Sidebands are specific non-signal events that I wanna analyse
@@ -406,9 +412,9 @@ int main(const int argc, const char** argv)
   //------------------------------------------
   //signalDefinition.emplace_back(new Jtruth::ThreeFSParticles<CVUniverse>());
   //signalDefinition.emplace_back(new Jtruth::AtLeastFourFSParticles<CVUniverse>());
-  //signalDefinition.emplace_back(new Jtruth::IsCOH<CVUniverse>());
+  signalDefinition.emplace_back(new Jtruth::IsCOH<CVUniverse>());
   //signalDefinition.emplace_back(new Jtruth::IsQE<CVUniverse>());
-  signalDefinition.emplace_back(new Jtruth::IsNotQEOrCOH<CVUniverse>());
+  //signalDefinition.emplace_back(new Jtruth::IsNotQEOrCOH<CVUniverse>());
   //------------------------------------------
   // -- pion bands
   //signalDefinition.emplace_back(new Jtruth::NTrueParticles<CVUniverse>("0 pi+", 0, pipPDG));
@@ -431,7 +437,7 @@ int main(const int argc, const char** argv)
   phaseSpace.emplace_back(new Jtruth::Apothem<CVUniverse>(apothem));
   //phaseSpace.emplace_back(new Jtruth::MuonAngle<CVUniverse>(maxMuTheta));
   phaseSpace.emplace_back(new Jtruth::EnuRange<CVUniverse>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
-  phaseSpace.emplace_back(new Jtruth::WRange<CVUniverse>(Form("%1.1f <= W [GeV] < %1.1f", minW, maxW), minW, maxW));
+  //phaseSpace.emplace_back(new Jtruth::WRange<CVUniverse>(Form("%1.1f <= W [GeV] < %1.1f", minW, maxW), minW, maxW));
   //==========================================================
   
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
@@ -483,32 +489,34 @@ int main(const int argc, const char** argv)
       // now direct branches
       johnsScoreBins = {0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
 
-  std::vector<double> johnsEvtxBins, johnsERecoilBins;
-  for(Int_t j = 0; j < 100; j++){ double elo = j * 5.0; johnsEvtxBins.push_back(elo); johnsERecoilBins.push_back(elo); }
-  johnsEvtxBins.push_back(500.0); johnsERecoilBins.push_back(500.0);
+  std::vector<double> johnsEvtxBins, johnsERecoilBins,
+      johnsPTPiBins, johnsPzPiBins, johnsEPiBins;
+  for(Int_t j = 0; j < 101; j++){
+      double elo = j * 5.0; johnsEvtxBins.push_back(elo); johnsERecoilBins.push_back(elo);
+  }
+
+  for(Int_t j = 0; j < 201; j++){
+      double elo = j * 10.0; johnsEPiBins.push_back(elo);
+  }
+
+  for(Int_t j = 0; j < 301; j++){
+      double elo = -1000.0 + j * 10.0; johnsPzPiBins.push_back(elo);
+  }
+
+  for(Int_t j = 0; j < 81; j++){
+      double elo = -200.0 + j * 5.0; johnsPTPiBins.push_back(elo);
+  }
 
   const double robsRecoilBinWidth = 50; //MeV
   for(int whichBin = 0; whichBin < 100 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
 
   std::vector<Variable*> vars = {
-      new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), // 0
-      /* new Variable("pzmu", "p_{||, #mu} [GeV/c]", dansPzBins, &CVUniverse::GetMuonPz, &CVUniverse::GetMuonPzTrue), // 1
-      new Variable("Emu",  "E_{#mu} [GeV]", johnsEmuBins, &CVUniverse::GetEmuGeV, &CVUniverse::GetElepTrueGeV), // 2
-      new Variable("theta_mu", "#theta_{#mu}", johnsThetaMuBins, &CVUniverse::GetThetamuDeg, &CVUniverse::GetThetalepTrueDeg), // 3
-      new Variable("Ehad", "E_{had} [GeV]", johnsEhadBins, &CVUniverse::GetEhadGeV, &CVUniverse::GetEhadTrueGeV), // 4
-      new Variable("theta_had", "#theta_{had}", johnsThetaHadBins, &CVUniverse::GetHadronThetaDeg, &CVUniverse::GetHadronThetaTrueDeg), // 5
-      new Variable("theta_muhad", "#theta_{#mu_had}", johnsThetaMuPiBins, &CVUniverse::GetThetaMuHadVar, &CVUniverse::GetThetaMuHadTrueVar), // 6
-      new Variable("M_muhad", "M_muhad [MeV/c^{2}]", johnsSysWBins, &CVUniverse::GetMuHadW, &CVUniverse::GetMuHadWTrue), // 7
-      new Variable("Enu",  "E_{#nu} [GeV]", johnsEnuBins, &CVUniverse::GetEnuGeV, &CVUniverse::GetEnuTrueGeV), // 8
-      new Variable("Q2",   "Q^{2} [(GeV/c)^{2}]", johnsQ2Bins, &CVUniverse::GetQ2GeV, &CVUniverse::GetQ2TrueGeV), // 9 
-      */ new Variable("Evtx", "E_{vtx} [MeV]", johnsEvtxBins, &CVUniverse::GetEVtx, &CVUniverse::GetEhadTrue), // truth is nonsense
-      new Variable("Erecoil", "E_{recoil} [MeV]", johnsERecoilBins, &CVUniverse::GetERecoilVtx150mm, &CVUniverse::GetEhadTrue), /* // truth is nonsense
-      new Variable("t",  "|t| [(GeV/c)^{2}]", johnsTBins, &CVUniverse::GetAbsTGeV, &CVUniverse::GetAbsTTrueGeV), // 10
-      new Variable("Alex_t",  "|t_{COH-like}| [(GeV/c)^{2}]", johnsTBins, &CVUniverse::GetAlexAbsTGeV, &CVUniverse::GetAlexAbsTTrueGeV), // 11
-      new Variable("W", "W_rest [MeV/c^{2}]", johnsWBins, &CVUniverse::GetW, &CVUniverse::GetTrueExperimentersW), // 12
-    // now direct branches
-    new Variable("piScore", "pion score", johnsScoreBins, &CVUniverse::GetPionScore, &CVUniverse::GetQ2TrueGeV), //with truth being nonsense! We just want event distribution
-      */
+      new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), /*
+      new Variable("pionE", "E_{#pi} [MeV]", johnsEPiBins, &CVUniverse::GetEpi, &CVUniverse::GetEpiTrue),
+      new Variable("pionP", "p_{#pi} [MeV]", johnsEPiBins, &CVUniverse::GetPpi, &CVUniverse::GetPpiTrue),
+      new Variable("pionPx", "p_{x;#pi} [MeV]", johnsPTPiBins, &CVUniverse::GetPxpi, &CVUniverse::GetPxpiTrue),
+      new Variable("pionPy", "p_{y;#pi} [MeV]", johnsPTPiBins, &CVUniverse::GetPypi, &CVUniverse::GetPypiTrue),
+      new Variable("pionPz", "p_{z;#pi} [MeV]", johnsPzPiBins, &CVUniverse::GetPzpi, &CVUniverse::GetPzpiTrue), */
   };
 
   std::vector<Variable2D*> vars2D; /* = {
