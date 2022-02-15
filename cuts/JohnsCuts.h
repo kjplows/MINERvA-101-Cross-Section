@@ -16,7 +16,8 @@ namespace std {
 #endif //#ifndef __GCCXML__
 
 //===========================================================
-// Simple file containing all my cuts.
+// Simple file containing all my cuts. // no longer all!
+// namespace Jreco contains them all still.
 // Author: John Plows, U. of Oxford
 // komninosjohn.plows@physics.ox.ac.uk
 //===========================================================
@@ -186,8 +187,6 @@ namespace Jreco
     }; // class IsPion
 
     // -- E-vtx cut pending distributions of COH evts & cuts up to here
-
-    // -- Testing various Erecoil branch cuts @ different values here.
 
     template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
     class VtxECut: public PlotUtils::Cut<UNIVERSE, EVENT>

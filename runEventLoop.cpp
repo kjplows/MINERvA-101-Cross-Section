@@ -60,6 +60,7 @@ enum ErrorCodes
 //#include "Binning.h" //TODO: Fix me
 
 //Custom cuts from me
+#include "cuts/BensCuts.h"
 #include "cuts/JohnsCuts.h"
 #include "cuts/JohnsSignalDefinition.h"
 
@@ -393,6 +394,7 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new Jreco::HasMINOSMatch<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::MINOSNumu<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::OneHadron<CVUniverse, MichelEvent>());
+  //preCuts.emplace_back(new Jreco::AtLeastOneMichel<CVUniverse, MichelEvent>()); // gotta fix?
   preCuts.emplace_back(new Jreco::ContainedHadron<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::IsPion<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::EnuRange<CVUniverse, MichelEvent>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
@@ -490,33 +492,70 @@ int main(const int argc, const char** argv)
       johnsScoreBins = {0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
 
   std::vector<double> johnsEvtxBins, johnsERecoilBins,
-      johnsPTPiBins, johnsPzPiBins, johnsEPiBins;
+      johnsPTPiBins, johnsPzPiBins, johnsEPiBins,
+      johnsPTMuBins, johnsPzMuBins, johnsEMuBins,
+      johnsPTSysBins, johnsPzSysBins, johnsESysBins;
   for(Int_t j = 0; j < 101; j++){
       double elo = j * 5.0; johnsEvtxBins.push_back(elo); johnsERecoilBins.push_back(elo);
   }
 
-  for(Int_t j = 0; j < 201; j++){
-      double elo = j * 10.0; johnsEPiBins.push_back(elo);
+  for(Int_t j = 0; j < 21; j++){
+      double elo = j * 100.0; johnsEPiBins.push_back(elo);
   }
 
-  for(Int_t j = 0; j < 301; j++){
-      double elo = -1000.0 + j * 10.0; johnsPzPiBins.push_back(elo);
+  for(Int_t j = 0; j < 31; j++){
+      double elo = -1000.0 + j * 100.0; johnsPzPiBins.push_back(elo);
+  }
+
+  for(Int_t j = 0; j < 9; j++){
+      double elo = -200.0 + j * 50.0; johnsPTPiBins.push_back(elo);
+  }
+
+  for(Int_t j = 0; j < 76; j++){
+      double elo = j * 200.0; johnsEMuBins.push_back(elo);
   }
 
   for(Int_t j = 0; j < 81; j++){
-      double elo = -200.0 + j * 5.0; johnsPTPiBins.push_back(elo);
+      double elo = -1000.0 + j * 200.0; johnsPzMuBins.push_back(elo);
+  }
+
+  for(Int_t j = 0; j < 17; j++){
+      double elo = -400.0 + j * 50.0; johnsPTMuBins.push_back(elo);
+  }
+
+  for(Int_t j = 0; j < 41; j++){
+      double elo = -1000.0 + j * 50.0; johnsPTSysBins.push_back(elo);
+  }
+
+  for(Int_t j = 0; j < 41; j++){
+      double elo = -1000.0 + j * 50.0; johnsPzSysBins.push_back(elo);
+  }
+
+  for(Int_t j = 0; j < 41; j++){
+      double elo = -1000.0 + j * 50.0; johnsESysBins.push_back(elo);
   }
 
   const double robsRecoilBinWidth = 50; //MeV
   for(int whichBin = 0; whichBin < 100 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
 
   std::vector<Variable*> vars = {
-      new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), /*
+      new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
       new Variable("pionE", "E_{#pi} [MeV]", johnsEPiBins, &CVUniverse::GetEpi, &CVUniverse::GetEpiTrue),
       new Variable("pionP", "p_{#pi} [MeV]", johnsEPiBins, &CVUniverse::GetPpi, &CVUniverse::GetPpiTrue),
       new Variable("pionPx", "p_{x;#pi} [MeV]", johnsPTPiBins, &CVUniverse::GetPxpi, &CVUniverse::GetPxpiTrue),
       new Variable("pionPy", "p_{y;#pi} [MeV]", johnsPTPiBins, &CVUniverse::GetPypi, &CVUniverse::GetPypiTrue),
-      new Variable("pionPz", "p_{z;#pi} [MeV]", johnsPzPiBins, &CVUniverse::GetPzpi, &CVUniverse::GetPzpiTrue), */
+      new Variable("pionPz", "p_{z;#pi} [MeV]", johnsPzPiBins, &CVUniverse::GetPzpi, &CVUniverse::GetPzpiTrue),
+      new Variable("muonE", "E_{#mu} [MeV]", johnsEMuBins, &CVUniverse::GetEmuMAD, &CVUniverse::GetEmuMADTrue),
+      new Variable("muonPx", "p_{x;#mu} [MeV]", johnsPTMuBins, &CVUniverse::GetPxmuWrtNuBeam, &CVUniverse::GetPxmuTrueWrtNuBeam),
+      new Variable("muonPy", "p_{y;#mu} [MeV]", johnsPTMuBins, &CVUniverse::GetPymuWrtNuBeam, &CVUniverse::GetPymuTrueWrtNuBeam),
+      new Variable("muonPz", "p_{z;#mu} [MeV]", johnsPzMuBins, &CVUniverse::GetPzmuWrtNuBeam, &CVUniverse::GetPzmuTrueWrtNuBeam),
+      new Variable("Enu", "E_{#nu} [MeV]", johnsEMuBins, &CVUniverse::GetEnu, &CVUniverse::GetEnuTrue),
+      new Variable("sysE", "E_{sys} [MeV]", johnsESysBins, &CVUniverse::GetSys4VE, &CVUniverse::GetSys4VETrue),
+      new Variable("sysPx", "p_{x;sys} [MeV]", johnsPTSysBins, &CVUniverse::GetSys4VPx, &CVUniverse::GetSys4VPxTrue),
+      new Variable("sysPy", "p_{y;sys} [MeV]", johnsPTSysBins, &CVUniverse::GetSys4VPy, &CVUniverse::GetSys4VPyTrue),
+      new Variable("sysPz", "p_{z;sys} [MeV]", johnsPzSysBins, &CVUniverse::GetSys4VPz, &CVUniverse::GetSys4VPzTrue),
+      new Variable("AbsT", "|t| [GeV]", johnsTBins, &CVUniverse::GetAbsTGeV, &CVUniverse::GetAbsTTrueGeV),
+      //new Variable("AlexAbsT", "|t|_{COH} [GeV]", johnsTBins, &CVUniverse::GetAlexAbsTGeV, &CVUniverse::GetAlexAbsTTrue),
   };
 
   std::vector<Variable2D*> vars2D; /* = {

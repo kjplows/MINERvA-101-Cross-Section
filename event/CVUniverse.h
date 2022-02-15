@@ -87,13 +87,46 @@ public:
 	return GetTrueExperimentersQ2()/(1000. * 1000.);
     }
 
-    //
+    // must restructure pion variables to query as vector element!
+    // iterate over hadron candidates first and get leading hadron
+    // i.e. pion energy
+
+    int GetLeadingHadronIndex() const
+    {
+	const int len = ( GetVecDouble( "MasterAnaDev_pion_E" ) ).size( );
+	double E = -1.0; int idx = -1;
+
+	for( Int_t i = 0; i < len; i++ ){
+	    if( GetVecElem( "MasterAnaDev_pion_E", i ) > E ){
+		idx = i; E = GetVecElem( "MasterAnaDev_pion_E", i );
+	    }
+	}
+
+	return idx;
+    }
+
+    // alternative to leading hadron index is the best LLR candidate
+    int GetBestPionIndex() const
+    {
+	const int len = ( GetVecDouble( "MasterAnaDev_hadron_piFit_scoreLLR" ) ).size( );
+	double LLR = -999.0; int idx = -1;
+
+	for( Int_t i = 0; i < len; i++ ){
+	    if( GetVecElem( "MasterAnaDev_hadron_piFit_scoreLLR", i ) > LLR ){
+		idx = i; LLR = GetVecElem( "MasterAnaDev_hadron_piFit_scoreLLR", i );
+	    }
+	}
+
+	return idx;
+    }
 
     // where is primary hadron going
 
     double HadronIsExitingID() const
     {
-	return GetInt( (GetAnaToolName()+"_hadron_isExiting").c_str() );
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem( (GetAnaToolName()+"_hadron_isExiting").c_str(), leadIdx );
     }
 
     // Topology
@@ -110,7 +143,9 @@ public:
 
     double GetHadronLLR() const
     {
-	return GetDouble((GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str());
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem((GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str(), leadIdx);
     }
 
     int GetNSecondaryHadrons() const
@@ -233,12 +268,6 @@ public:
 	return GetVecElem(pdgBranch.c_str(), pos);
     }
 
-    //============================================
-    // I want to leave HadronFunctions for
-    // MAD 1.49. Older branches for Epi etc
-    // I'll put here. RETHERE REMOVE (?)
-    //============================================
-
     // reco
 
     double GetEVtx() const // MeV
@@ -290,8 +319,6 @@ public:
 	return EVNM;
     }
 
-    // note these branches are all *proton*. I will update the names. RETHERE
-
     double GetEhad() const //MeV
     {
 	//double hadE = GetVecElem((GetAnaToolName()+"_HadronE").c_str(), 3);
@@ -339,7 +366,7 @@ public:
     double GetHadronThetaDeg() const {
 	return GetHadronTheta() * rad2deg;
     }
-
+    
     ROOT::Math::PxPyPzEVector GetHadron4V(const double Mhad) const {
 	double Phad = GetPhad(Mhad);
 	double theta = GetHadronTheta();
@@ -355,7 +382,9 @@ public:
 
     double GetEpiCorr( ) const // MeV, passive-material-corrected
     {
-	return GetDouble( ( GetAnaToolName()+"_hadron_pion_E_corr" ).c_str() );
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem( ( GetAnaToolName()+"_hadron_pion_E_corr" ).c_str(), leadIdx );
     }
 
     double GetEpiCorrGeV( ) const
@@ -365,38 +394,89 @@ public:
 
     double GetPxpiCorr( ) const // wrt nu beam
     {
-	return GetDouble( ( GetAnaToolName()+"_hadron_pion_px_corr" ).c_str() );
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem( ( GetAnaToolName()+"_hadron_pion_px_corr" ).c_str(), leadIdx );
     }
     
     double GetPypiCorr( ) const // wrt nu beam
     {
-	return GetDouble( ( GetAnaToolName()+"_hadron_pion_py_corr" ).c_str() );
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem( ( GetAnaToolName()+"_hadron_pion_py_corr" ).c_str(), leadIdx );
     }
 
     double GetPzpiCorr( ) const // wrt nu beam
     {
-	return GetDouble( ( GetAnaToolName()+"_hadron_pion_pz_corr" ).c_str() );
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem( ( GetAnaToolName()+"_hadron_pion_pz_corr" ).c_str(), leadIdx );
     }
 
     double GetPpiCorr( ) const // MeV
     {
-	return GetDouble( ( GetAnaToolName()+"_hadron_pion_p_corr" ).c_str() );
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem( ( GetAnaToolName()+"_hadron_pion_p_corr" ).c_str(), leadIdx );
     }
 
     double GetThetapi( ) const // rad, wrt nu beam
     {
-	return GetDouble( ( GetAnaToolName()+"_pion_theta" ).c_str() );
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem( ( GetAnaToolName()+"_pion_theta" ).c_str(), leadIdx );
     }
 
     double GetPhipi( ) const // rad, wrt nu beam
     {
-	return GetDouble( ( GetAnaToolName()+"_pion_phi" ).c_str() );
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem( ( GetAnaToolName()+"_pion_phi" ).c_str(), leadIdx );
+    }
+
+    // let's do some muon branches for inspection
+    double GetEmuMAD( ) const
+    {
+	return GetDouble( "MasterAnaDev_muon_E" );
+    }
+
+    double GetPxmu( ) const
+    {
+	return GetDouble( "MasterAnaDev_muon_Px" );
+    }
+
+    double GetPymu( ) const
+    {
+	return GetDouble( "MasterAnaDev_muon_Py" );
+    }
+
+    double GetPzmu( ) const
+    {
+	return GetDouble( "MasterAnaDev_muon_Pz" );
+    }
+
+    double GetPxmuWrtNuBeam() const
+    {
+	return GetPxmu( );
+    }
+
+    double GetPymuWrtNuBeam() const
+    {
+	return GetPymu( ) * std::cos( MinervaUnits::numi_beam_angle_rad )
+	    - GetPzmu( ) * std::sin( MinervaUnits::numi_beam_angle_rad );
+    }
+
+    double GetPzmuWrtNuBeam() const
+    {
+	return GetPymu( ) * std::sin( MinervaUnits::numi_beam_angle_rad )
+	    + GetPzmu( ) * std::cos( MinervaUnits::numi_beam_angle_rad );
     }
 
     // uncorrected branches here... safe with MAD 1.53
 
     double GetEpi( ) const // MeV
     {
+	/*
 	const char * LLRBranch = (GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str();
 	const char * varBranch = (GetAnaToolName()+"_pion_E").c_str();
 	const int len = (GetVecDouble( LLRBranch ) ).size();
@@ -406,6 +486,14 @@ public:
 	    if( thisLLR > maxLLR ){ maxLLR = thisLLR; iBest = i; }
 	}
 	return GetVecElem( varBranch, iBest );
+	*/
+
+	// enforce selection on *leading* hadron!
+	//const int leadIdx = GetLeadingHadronIndex();
+	//const int leadIdx = GetBestPionIndex();
+	//return GetVecElem( ( GetAnaToolName() + "_pion_E" ).c_str(), leadIdx );
+
+	return GetEpiMatchedTrue( ); // to see what happens!
     }
 
     double GetEpiGeV( ) const
@@ -415,6 +503,7 @@ public:
 
     double GetPxpi( ) const // wrt MINERvA -- rotate by numi_beam_angle_rad for nu!
     {
+	/*
 	const char * LLRBranch = (GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str();
 	const char * varBranch = (GetAnaToolName()+"_pion_Px").c_str();
 	const int len = (GetVecDouble( LLRBranch ) ).size();
@@ -424,10 +513,21 @@ public:
 	    if( thisLLR > maxLLR ){ maxLLR = thisLLR; iBest = i; }
 	}
 	return GetVecElem( varBranch, iBest );
+	*/
+
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	//return GetVecElem( ( GetAnaToolName() + "_pion_Px" ).c_str(), leadIdx );
+
+	const double px = GetVecElem( ( GetAnaToolName() + "_pion_Px" ).c_str(), leadIdx );
+	const double p3 = GetVecElem( ( GetAnaToolName() + "_pion_P" ).c_str(), leadIdx );
+
+	return GetPpi() * px/p3;
     }
     
     double GetPypi( ) const // wrt MINERvA -- rotate by numi_beam_angle_rad for nu!
     {
+	/*
         const char * LLRBranch = (GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str();
 	const char * varBranch = (GetAnaToolName()+"_pion_Py").c_str();
 	const int len = (GetVecDouble( LLRBranch ) ).size();
@@ -437,10 +537,22 @@ public:
 	    if( thisLLR > maxLLR ){ maxLLR = thisLLR; iBest = i; }
 	}
 	return GetVecElem( varBranch, iBest );
+	*/
+
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	//return GetVecElem( ( GetAnaToolName() + "_pion_Py" ).c_str(), leadIdx );
+
+
+	const double py = GetVecElem( ( GetAnaToolName() + "_pion_Py" ).c_str(), leadIdx );
+	const double p3 = GetVecElem( ( GetAnaToolName() + "_pion_P" ).c_str(), leadIdx );
+
+	return GetPpi() * py/p3;
     }
 
     double GetPzpi( ) const // wrt MINERvA -- rotate by numi_beam_angle_rad for nu!
     {
+	/*
         const char * LLRBranch = (GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str();
 	const char * varBranch = (GetAnaToolName()+"_pion_Pz").c_str();
 	const int len = (GetVecDouble( LLRBranch ) ).size();
@@ -450,10 +562,21 @@ public:
 	    if( thisLLR > maxLLR ){ maxLLR = thisLLR; iBest = i; }
 	}
 	return GetVecElem( varBranch, iBest );
+	*/
+
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	//return GetVecElem( ( GetAnaToolName() + "_pion_Pz" ).c_str(), leadIdx );
+
+	const double pz = GetVecElem( ( GetAnaToolName() + "_pion_Pz" ).c_str(), leadIdx );
+	const double p3 = GetVecElem( ( GetAnaToolName() + "_pion_P" ).c_str(), leadIdx );
+
+	return GetPpi() * pz/p3;
     }
 
     double GetPpi( ) const // MeV
     {
+	/*
         const char * LLRBranch = (GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str();
 	const char * varBranch = (GetAnaToolName()+"_pion_P").c_str();
 	const int len = (GetVecDouble( LLRBranch ) ).size();
@@ -463,6 +586,15 @@ public:
 	    if( thisLLR > maxLLR ){ maxLLR = thisLLR; iBest = i; }
 	}
 	return GetVecElem( varBranch, iBest );
+	*/
+
+	//const int leadIdx = GetLeadingHadronIndex();
+	//return GetVecElem( ( GetAnaToolName() + "_pion_P" ).c_str(), leadIdx );
+
+	const double Epi = GetEpiMatchedTrue( );
+	const double mpi = MinervaUnits::M_pion;
+	
+	return std::sqrt( Epi * Epi - mpi * mpi );
     }
 
     // let's explicitly rotate this on the yz plane
@@ -493,8 +625,74 @@ public:
 	return ROOT::Math::PxPyPzEVector( Px, Py, Pz, E );
     }
 
+    // -- let's add muon truth, shall we?
+
+    double GetEmuMADTrue( ) const
+    {
+	return GetDouble( "truth_muon_E" );
+    }
+
+    double GetPxmuTrue( ) const
+    {
+	return GetDouble( "truth_muon_px" );
+    }
+
+    double GetPymuTrue( ) const
+    {
+	return GetDouble( "truth_muon_py" );
+    }
+
+    double GetPzmuTrue( ) const
+    {
+	return GetDouble( "truth_muon_pz" );
+    }
+
+    double GetPxmuTrueWrtNuBeam( ) const
+    {
+	return GetPxmuTrue( );
+    }
+
+    double GetPymuTrueWrtNuBeam( ) const
+    {
+	return GetPymuTrue( ) * std::cos( MinervaUnits::numi_beam_angle_rad )
+	    - GetPzmuTrue( ) * std::sin( MinervaUnits::numi_beam_angle_rad );
+    }
+
+    double GetPzmuTrueWrtNuBeam( ) const
+    {
+	return GetPymuTrue( ) * std::sin( MinervaUnits::numi_beam_angle_rad )
+	    + GetPzmuTrue( ) * std::cos( MinervaUnits::numi_beam_angle_rad );
+    }
+
     // -- let's add pion truth, shall we?
 
+    double GetTpiMatchedTrue( ) const
+    {
+	//const int leadIdx = GetLeadingHadronIndex();
+	const int leadIdx = GetBestPionIndex();
+	const int truePDG = GetVecElem( "MasterAnaDev_hadron_tm_PDGCode", leadIdx );
+	if( truePDG != 211 ) return -1.0; // not pion!
+
+	return GetVecElem( "MasterAnaDev_hadron_tm_beginKE", leadIdx );
+    }
+
+    double GetEpiMatchedTrue( ) const
+    {
+	const double trueTpi = GetTpiMatchedTrue( );
+	if( trueTpi < 0.0 ) return -1.0;
+
+	return trueTpi + MinervaUnits::M_pion;
+    }
+
+    double GetPpiMatchedTrue( ) const
+    {
+	const double trueEpi = GetEpiMatchedTrue( );
+	if( trueEpi < 0.0 ) return -1.0;
+
+	const double mpi = MinervaUnits::M_pion;
+	return std::sqrt( trueEpi*trueEpi - mpi*mpi );
+    }
+	
     double GetEpiTrue( ) const
     {
         const char * PDGBranch = "mc_FSPartPDG";
@@ -570,21 +768,21 @@ public:
 
     // and explicitly rotate on yz plane
 
-    double getPxpiTrueWrtBeam( ) const
+    double GetPxpiTrueWrtBeam( ) const
     {
 	return GetPxpiTrue( ); // same component
     }
 
-    double getPypiTrueWrtBeam( ) const
+    double GetPypiTrueWrtBeam( ) const
     {
 	return GetPypiTrue( ) * TMath::Cos( MinervaUnits::numi_beam_angle_rad )
 	    - GetPzpiTrue( ) * TMath::Sin( MinervaUnits::numi_beam_angle_rad );
     }
 
-    double getPzpiTrueWrtBeam( ) const
+    double GetPzpiTrueWrtBeam( ) const
     {
 	return GetPypiTrue( ) * TMath::Sin( MinervaUnits::numi_beam_angle_rad )
-	    + GetPzpiTrue( ) * TMath::Sin( MinervaUnits::numi_beam_angle_rad );
+	    + GetPzpiTrue( ) * TMath::Cos( MinervaUnits::numi_beam_angle_rad );
     }
 
     ROOT::Math::PxPyPzEVector GetHadron4VTrue(const int PDG) const {
@@ -628,14 +826,44 @@ public:
 
     double GetAbsT() const { //MeV^2
 	ROOT::Math::PxPyPzEVector mu4V = GetMuon4V(); // wrt nu direction, i.e. along z = z_nu
-	const double Mhad = ( GetHadronLLR() >= 0.0 ) ? MinervaUnits::M_pion : MinervaUnits::M_p ;
-	ROOT::Math::PxPyPzEVector had4V = GetHadron4V(Mhad);
+	//const double Mhad = ( GetHadronLLR() >= 0.0 ) ? MinervaUnits::M_pion : MinervaUnits::M_p ;
+	//ROOT::Math::PxPyPzEVector had4V = GetHadron4V(Mhad);
+	ROOT::Math::PxPyPzEVector pi4V = GetPion4V();
 	const double Enu = GetEnu();
 	const double py = 0.0; const double pz = Enu;
 	ROOT::Math::PxPyPzEVector nu4V(0.,py,pz,Enu);
 
-	ROOT::Math::PxPyPzEVector sys4V = nu4V - mu4V - had4V;
+	ROOT::Math::PxPyPzEVector sys4V = nu4V - mu4V - pi4V;
 	return std::abs(sys4V.M() * sys4V.M());
+    }
+
+    // some diagnostics for sys4V
+    double GetSys4VE() const { // MeV
+	const double muE = GetEmuMAD();
+	const double piE = GetEpi();
+	const double nuE = GetEnu();
+	return nuE - muE - piE;
+    }
+
+    double GetSys4VPx() const { // MeV
+	const double muPx = GetPxmuWrtNuBeam();
+	const double piPx = GetPxpiWrtBeam();
+	const double nuPx = 0.0;
+	return nuPx - muPx - piPx;
+    }
+
+    double GetSys4VPy() const { // MeV
+	const double muPy = GetPymuWrtNuBeam();
+	const double piPy = GetPypiWrtBeam();
+	const double nuPy = 0.0;
+	return nuPy - muPy - piPy;
+    }
+
+    double GetSys4VPz() const { // MeV
+	const double muPz = GetPzmuWrtNuBeam();
+	const double piPz = GetPzpiWrtBeam();
+	const double nuPz = GetEnu();
+	return nuPz - muPz - piPz;
     }
 
     double GetAbsTGeV() const {
@@ -719,7 +947,7 @@ public:
     }
 
     double GetEnu() const {
-	return GetEmu() + GetEhad(); //good assuming measurement of Ehad is good
+	return GetEmu() + GetEpi(); //good assuming measurement of Ehad is good
     }
 
     double GetEnuGeV() const {
@@ -827,6 +1055,7 @@ public:
     }
 
     //calc |t|
+    /*
     double GetAbsTTrue() const { // MeV^2
 	ROOT::Math::PxPyPzEVector mu4V = GetLep4VTrue();
 	const int PDG_pi = 211;
@@ -841,6 +1070,51 @@ public:
 
 	ROOT::Math::PxPyPzEVector sys4V = nu4V - mu4V - had4V;
 	return std::abs(sys4V.M() * sys4V.M());
+    }
+    */
+
+    double GetAbsTTrue() const { // MeV^2
+	ROOT::Math::PxPyPzEVector mu4V = GetLep4VTrue();
+	const double Enu = GetEnuTrue();
+	ROOT::Math::PxPyPzEVector nu4V(0.,0.,Enu,Enu);
+
+	const double Epi = GetEpiTrue();
+	const double px = GetPxpiTrueWrtBeam();
+	const double py = GetPypiTrueWrtBeam();
+	const double pz = GetPzpiTrueWrtBeam();
+	ROOT::Math::PxPyPzEVector pi4V( px, py, pz, Epi );
+
+	ROOT::Math::PxPyPzEVector sys4V = nu4V - mu4V - pi4V;
+	return std::abs( sys4V.M() * sys4V.M() );
+    }
+
+    // some diagnostics for sys4V
+    double GetSys4VETrue() const { // MeV
+	const double muE = GetEmuMADTrue();
+	const double piE = GetEpiTrue();
+	const double nuE = GetEnuTrue();
+	return nuE - muE - piE;
+    }
+
+    double GetSys4VPxTrue() const { // MeV
+	const double muPx = GetPxmuTrueWrtNuBeam();
+	const double piPx = GetPxpiTrueWrtBeam();
+	const double nuPx = 0.0;
+	return nuPx - muPx - piPx;
+    }
+
+    double GetSys4VPyTrue() const { // MeV
+	const double muPy = GetPymuTrueWrtNuBeam();
+	const double piPy = GetPypiTrueWrtBeam();
+	const double nuPy = 0.0;
+	return nuPy - muPy - piPy;
+    }
+
+    double GetSys4VPzTrue() const { // MeV
+	const double muPz = GetPzmuTrueWrtNuBeam();
+	const double piPz = GetPzpiTrueWrtBeam();
+	const double nuPz = GetEnuTrue();
+	return nuPz - muPz - piPz;
     }
 
     double GetAbsTTrueGeV() const {
