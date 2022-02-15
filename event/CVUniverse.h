@@ -476,24 +476,12 @@ public:
 
     double GetEpi( ) const // MeV
     {
-	/*
-	const char * LLRBranch = (GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str();
-	const char * varBranch = (GetAnaToolName()+"_pion_E").c_str();
-	const int len = (GetVecDouble( LLRBranch ) ).size();
-	double maxLLR = -1.0e+6; int iBest = -1;
-	for( Int_t i = 0; i < len; i++ ){ // return best pion candidate
-	    double thisLLR = GetVecElem( LLRBranch, i );
-	    if( thisLLR > maxLLR ){ maxLLR = thisLLR; iBest = i; }
-	}
-	return GetVecElem( varBranch, iBest );
-	*/
-
-	// enforce selection on *leading* hadron!
+	// enforce selection on ~*leading* hadron~ best pion candidate!
 	//const int leadIdx = GetLeadingHadronIndex();
-	//const int leadIdx = GetBestPionIndex();
-	//return GetVecElem( ( GetAnaToolName() + "_pion_E" ).c_str(), leadIdx );
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem( ( GetAnaToolName() + "_pion_E" ).c_str(), leadIdx );
 
-	return GetEpiMatchedTrue( ); // to see what happens!
+	//return GetEpiMatchedTrue( ); // to see what happens!
     }
 
     double GetEpiGeV( ) const
@@ -503,18 +491,6 @@ public:
 
     double GetPxpi( ) const // wrt MINERvA -- rotate by numi_beam_angle_rad for nu!
     {
-	/*
-	const char * LLRBranch = (GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str();
-	const char * varBranch = (GetAnaToolName()+"_pion_Px").c_str();
-	const int len = (GetVecDouble( LLRBranch ) ).size();
-	double maxLLR = -1.0e+6; int iBest = -1;
-	for( Int_t i = 0; i < len; i++ ){ // return best pion candidate
-	    double thisLLR = GetVecElem( LLRBranch, i );
-	    if( thisLLR > maxLLR ){ maxLLR = thisLLR; iBest = i; }
-	}
-	return GetVecElem( varBranch, iBest );
-	*/
-
 	//const int leadIdx = GetLeadingHadronIndex();
 	const int leadIdx = GetBestPionIndex();
 	//return GetVecElem( ( GetAnaToolName() + "_pion_Px" ).c_str(), leadIdx );
@@ -527,18 +503,6 @@ public:
     
     double GetPypi( ) const // wrt MINERvA -- rotate by numi_beam_angle_rad for nu!
     {
-	/*
-        const char * LLRBranch = (GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str();
-	const char * varBranch = (GetAnaToolName()+"_pion_Py").c_str();
-	const int len = (GetVecDouble( LLRBranch ) ).size();
-	double maxLLR = -1.0e+6; int iBest = -1;
-	for( Int_t i = 0; i < len; i++ ){ // return best pion candidate
-	    double thisLLR = GetVecElem( LLRBranch, i );
-	    if( thisLLR > maxLLR ){ maxLLR = thisLLR; iBest = i; }
-	}
-	return GetVecElem( varBranch, iBest );
-	*/
-
 	//const int leadIdx = GetLeadingHadronIndex();
 	const int leadIdx = GetBestPionIndex();
 	//return GetVecElem( ( GetAnaToolName() + "_pion_Py" ).c_str(), leadIdx );
@@ -552,18 +516,6 @@ public:
 
     double GetPzpi( ) const // wrt MINERvA -- rotate by numi_beam_angle_rad for nu!
     {
-	/*
-        const char * LLRBranch = (GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str();
-	const char * varBranch = (GetAnaToolName()+"_pion_Pz").c_str();
-	const int len = (GetVecDouble( LLRBranch ) ).size();
-	double maxLLR = -1.0e+6; int iBest = -1;
-	for( Int_t i = 0; i < len; i++ ){ // return best pion candidate
-	    double thisLLR = GetVecElem( LLRBranch, i );
-	    if( thisLLR > maxLLR ){ maxLLR = thisLLR; iBest = i; }
-	}
-	return GetVecElem( varBranch, iBest );
-	*/
-
 	//const int leadIdx = GetLeadingHadronIndex();
 	const int leadIdx = GetBestPionIndex();
 	//return GetVecElem( ( GetAnaToolName() + "_pion_Pz" ).c_str(), leadIdx );
@@ -576,22 +528,10 @@ public:
 
     double GetPpi( ) const // MeV
     {
-	/*
-        const char * LLRBranch = (GetAnaToolName()+"_hadron_piFit_scoreLLR").c_str();
-	const char * varBranch = (GetAnaToolName()+"_pion_P").c_str();
-	const int len = (GetVecDouble( LLRBranch ) ).size();
-	double maxLLR = -1.0e+6; int iBest = -1;
-	for( Int_t i = 0; i < len; i++ ){ // return best pion candidate
-	    double thisLLR = GetVecElem( LLRBranch, i );
-	    if( thisLLR > maxLLR ){ maxLLR = thisLLR; iBest = i; }
-	}
-	return GetVecElem( varBranch, iBest );
-	*/
-
 	//const int leadIdx = GetLeadingHadronIndex();
 	//return GetVecElem( ( GetAnaToolName() + "_pion_P" ).c_str(), leadIdx );
 
-	const double Epi = GetEpiMatchedTrue( );
+	const double Epi = GetEpi( );
 	const double mpi = MinervaUnits::M_pion;
 	
 	return std::sqrt( Epi * Epi - mpi * mpi );
@@ -872,36 +812,54 @@ public:
     
     // now construct |t| using Alex's Eq. (6.1)
     double GetAlexAbsT() const { //MeV^2
-	const double Mhad = ( GetHadronLLR() >= 0.0 ) ?  MinervaUnits::M_pion : MinervaUnits::M_proton; //need to declare in func
+	//const double Mhad = ( GetHadronLLR() >= 0.0 ) ?  MinervaUnits::M_pion : MinervaUnits::M_proton; //need to declare in func
 	    
-	double Emu      = GetEmu();
-	double Ehad     = GetEhad();
+	const double Emu      = GetEmuMAD();
+	//double Ehad     = GetEhad();
+	const double Epi      = GetEpi();
+	/*
 	double Pmu      = GetPmu();
 	double Phad     = GetPhad(Mhad);
 	double thetamu  = GetThetamu();
 	double thetahad = GetHadronTheta();
 	double thetaMuHad = GetMuHadAngle(Mhad);
+	*/
+
+	const double Pxmu = GetPxmuWrtNuBeam();
+	const double Pymu = GetPymuWrtNuBeam();
+	const double Pzmu = GetPzmuWrtNuBeam();
+	const double Pmu = std::sqrt( Pxmu*Pxmu + Pymu*Pymu + Pzmu*Pzmu );
+
+	const double Pxpi = GetPxpiWrtBeam();
+	const double Pypi = GetPypiWrtBeam();
+	const double Pzpi = GetPzpiWrtBeam();
+	const double Ppi = std::sqrt( Pxpi*Pxpi + Pypi*Pypi + Pzpi*Pzpi );
+
+	const double inprodNum = Pxmu*Pxpi + Pymu*Pypi + Pzmu*Pzpi;
+	const double inprodDen = Pmu * Ppi;
+	const double thetaMuPi = TMath::ACos( inprodNum / inprodDen );
 	
 	const double Mmu = MinervaUnits::M_mu;
+	const double Mpi = MinervaUnits::M_pion;
 
-	double sumE = Emu + Ehad;
-	double term1 = -2. * sumE * (Emu - Pmu * std::cos(thetamu));
+	double sumE = Emu + Epi;
+	double term1 = -2. * sumE * ( Emu - Pzmu );
 	double term2 = Mmu * Mmu;
-	double term3 = -2. * (Ehad*Ehad - sumE*Phad*std::cos(thetahad) + Pmu*Phad*std::cos(thetaMuHad));
-	double term4 = Mhad * Mhad;
+	double term3 = -2. * ( Epi*Epi - sumE*Pzpi + inprodNum );
+	double term4 = Mpi * Mpi;
 
 	return std::abs(term1 + term2 + term3 + term4);
     }
 
     double GetAlexAbsTGeV() const {
-	return pow(1e-3, 2) * GetAlexAbsT();
+	return 1.0e-6 * GetAlexAbsT();
     }
 
     // calculator function for Enu under COH
     // Equation (3.7) in Alex's thesis
 
     double GetCOHEnu() const {
-	return GetEmu() + GetEhad();
+	return GetEmu() + GetEpi();
     }
     
     double GetCOHEnuGeV() const {
@@ -919,12 +877,26 @@ public:
     // calc COH Q2
     double calcCOHQ2() const { // GeV^2
 	const double mmu = MinervaUnits::M_mu * 1e-3; //GeV
-	double Emu     = GetEmuGeV();
-	double Pmu     = GetPmu() * 1e-3;
-	double thetamu = GetThetamu();
+	double Emu     = GetEmuGeV(); // GeV
+	double Pmu     = std::sqrt( Emu*Emu - mmu*mmu ); // GeV
+	double Pzmu    = GetPzmuWrtNuBeam() * 1.0e-3; // GeV
+	double thetamu = TMath::ACos( Pzmu / Pmu );
 	double Enu     = GetCOHEnuGeV();
 
 	return 2. * Enu * (Emu - Pmu * std::cos(thetamu)) - mmu * mmu;
+    }
+
+    // get true COH Q2
+    double GetCOHQ2TrueGeV() const { // GeV^2
+	const double Enu  = GetEnuTrue() * 1.0e-3; //GeV
+	const double Emu  = GetEmuMADTrue() * 1.0e-3; //GeV
+	const double mmu  = MinervaUnits::M_mu * 1.0e-3; //GeV
+	
+	const double pzmu = GetPzmuTrueWrtNuBeam( ) * 1.0e-3; //GeV
+	const double pmu  = std::sqrt( Emu*Emu - mmu*mmu ); // GeV
+	const double theta = TMath::ACos( pzmu / pmu );
+
+	return 2. * Enu * ( Emu - pzmu ) - mmu * mmu;
     }
 
     //better definition of Q2 for higher |t|
@@ -1046,12 +1018,80 @@ public:
 	return std::acos(num / den);
     }
 
-    // and a version for Variable declaration
-    double GetThetaMuHadTrueVar() const {
-	const int PDG_pi = 211; //need to declare within function scope
-	const int PDG_p  = 2212;
-	const int PDG = (GetNPiPlusTrue() > GetNProtonsTrue()) ? PDG_pi : PDG_p;
-	return GetMuHadAngleTrue(PDG) * 180. / TMath::Pi();
+    double GetThetaMuPi() const {
+	const double pxm = GetPxmuWrtNuBeam();
+	const double pym = GetPymuWrtNuBeam();
+	const double pzm = GetPzmuWrtNuBeam();
+	const double pm  = std::sqrt( pxm*pxm + pym*pym + pzm*pzm );
+
+	const double pxp = GetPxpiWrtBeam();
+	const double pyp = GetPypiWrtBeam();
+	const double pzp = GetPzpiWrtBeam();
+	const double pp  = std::sqrt( pxp*pxp + pyp*pyp + pzp*pzp );
+
+	const double num = pxm*pxp + pym*pyp + pzm*pzp;
+	const double den = pm*pp;
+
+	return TMath::ACos( num / den );
+    }
+
+    double GetThetaMuPiDeg() const {
+	return GetThetaMuPi() * rad2deg;
+    }
+
+    double GetThetaMuPiTrue() const {
+	const double pxm = GetPxmuTrueWrtNuBeam();
+	const double pym = GetPymuTrueWrtNuBeam();
+	const double pzm = GetPzmuTrueWrtNuBeam();
+	const double pm  = std::sqrt( pxm*pxm + pym*pym + pzm*pzm );
+
+	const double pxp = GetPxpiTrueWrtBeam();
+	const double pyp = GetPypiTrueWrtBeam();
+	const double pzp = GetPzpiTrueWrtBeam();
+	const double pp  = std::sqrt( pxp*pxp + pyp*pyp + pzp*pzp );
+
+	const double num = pxm*pxp + pym*pyp + pzm*pzp;
+	const double den = pm*pp;
+
+	return TMath::ACos( num / den );
+    }
+
+    double GetThetaMuPiTrueDeg() const {
+	return GetThetaMuPiTrue() * rad2deg;
+    }
+
+    double GetMMuPi() const { // MeV
+	const double pxm = GetPxmuWrtNuBeam();
+	const double pym = GetPymuWrtNuBeam();
+	const double pzm = GetPzmuWrtNuBeam();
+	const double Em  = GetEmuMAD();
+
+	const double pxp = GetPxpiWrtBeam();
+	const double pyp = GetPypiWrtBeam();
+	const double pzp = GetPzpiWrtBeam();
+	const double Ep  = GetEpi();
+
+	ROOT::Math::PxPyPzEVector mu4V( pxm, pym, pzm, Em );
+	ROOT::Math::PxPyPzEVector pi4V( pxp, pyp, pzp, Ep );
+	ROOT::Math::PxPyPzEVector mp4V = mu4V + pi4V;
+	return mp4V.M();
+    }
+
+    double GetMMuPiTrue() const { // MeV
+	const double pxm = GetPxmuTrueWrtNuBeam();
+	const double pym = GetPymuTrueWrtNuBeam();
+	const double pzm = GetPzmuTrueWrtNuBeam();
+	const double Em  = GetEmuMADTrue();
+
+	const double pxp = GetPxpiTrueWrtBeam();
+	const double pyp = GetPypiTrueWrtBeam();
+	const double pzp = GetPzpiTrueWrtBeam();
+	const double Ep  = GetEpiTrue();
+
+	ROOT::Math::PxPyPzEVector mu4V( pxm, pym, pzm, Em );
+	ROOT::Math::PxPyPzEVector pi4V( pxp, pyp, pzp, Ep );
+	ROOT::Math::PxPyPzEVector mp4V = mu4V + pi4V;
+	return mp4V.M();
     }
 
     //calc |t|
@@ -1074,7 +1114,13 @@ public:
     */
 
     double GetAbsTTrue() const { // MeV^2
-	ROOT::Math::PxPyPzEVector mu4V = GetLep4VTrue();
+	//ROOT::Math::PxPyPzEVector mu4V = GetLep4VTrue();
+	const double Emu = GetEmuMADTrue();
+	const double pmx = GetPxmuTrueWrtNuBeam();
+	const double pmy = GetPymuTrueWrtNuBeam();
+	const double pmz = GetPzmuTrueWrtNuBeam();
+	ROOT::Math::PxPyPzEVector mu4V( pmx, pmy, pmz, Emu );
+	
 	const double Enu = GetEnuTrue();
 	ROOT::Math::PxPyPzEVector nu4V(0.,0.,Enu,Enu);
 
@@ -1122,10 +1168,11 @@ public:
     }
 
     double GetAlexAbsTTrue() const { //MeV^2
-	const int PDG_pi = 211; //need to declare within function scope
-	const int PDG_p  = 2212;
-	const int PDG = (GetNPiPlusTrue() > GetNProtonsTrue()) ? PDG_pi : PDG_p;
-	
+	//const int PDG_pi = 211; //need to declare within function scope
+	//const int PDG_p  = 2212;
+	//const int PDG = (GetNPiPlusTrue() > GetNProtonsTrue()) ? PDG_pi : PDG_p;
+
+	/*
 	double Emu        = GetElepTrue();
 	double Ehad       = GetEhadTrue();
 	double Pmu        = GetPlepTrue();
@@ -1133,27 +1180,38 @@ public:
 	double thetamu    = GetThetalepTrue();
 	double thetahad   = GetThetaHadTrue(PDG);
 	double thetaMuHad = GetMuHadAngleTrue(PDG); 
+	*/
+
+	const double Emu = GetEmuMADTrue();
+	const double pmx = GetPxmuTrueWrtNuBeam();
+	const double pmy = GetPymuTrueWrtNuBeam();
+	const double pmz = GetPzmuTrueWrtNuBeam();
+	const double pm  = std::sqrt( pmx*pmx + pmy*pmy + pmz*pmz );
+
+	const double Epi = GetEpiTrue();
+	const double px  = GetPxpiTrueWrtBeam();
+	const double py  = GetPypiTrueWrtBeam();
+	const double pz  = GetPzpiTrueWrtBeam();
+	const double ppi = std::sqrt( px*px + py*py + pz*pz );
+
+	const double inProdNum  = px*pmx + py*pmy + pz*pmz;
+	const double inProdDen  = pm*ppi;
+	const double thetaMuHad = TMath::ACos( inProdNum / inProdDen );
 
 	const double Mmu = MinervaUnits::M_mu;
-	double Mhad = 0;
-	switch(PDG){
-	    case 211:  Mhad = MinervaUnits::M_pion; break;
-	    case 2212: Mhad = MinervaUnits::M_p;    break;
-	    case 2112: Mhad = MinervaUnits::M_n;    break;
-	    default:   Mhad = 0;
-	}
+	const double Mpi = MinervaUnits::M_pion;
 
-	double sumE = Emu + Ehad;
-	double term1 = -2. * sumE * (Emu - Pmu * std::cos(thetamu));
+	double sumE = Emu + Epi;
+	double term1 = -2. * sumE * ( Emu - pmz );
 	double term2 = Mmu * Mmu;
-	double term3 = -2. * (Ehad*Ehad - sumE*Phad*std::cos(thetahad) + Pmu*Phad*std::cos(thetaMuHad));
-	double term4 = Mhad * Mhad;
+	double term3 = -2. * ( Epi*Epi - sumE*pz + inProdNum );
+	double term4 = Mpi * Mpi;
 
 	return std::abs(term1 + term2 + term3 + term4);
     }
 
     double GetAlexAbsTTrueGeV() const {
-	return pow(1.0e-3, 2.0) * GetAlexAbsTTrue();
+	return 1.0e-6 * GetAlexAbsTTrue();
     }
 
     double GetWTrue() const {
@@ -1235,7 +1293,7 @@ public:
 
     double GetEmuGeV() const //GeV
     {
-	return GetEmu()/1000.;
+	return GetEmuMAD()/1000.;
     }
 
     double GetElepTrueGeV() const //GeV

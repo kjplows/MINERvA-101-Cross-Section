@@ -419,8 +419,8 @@ int main(const int argc, const char** argv)
   //signalDefinition.emplace_back(new Jtruth::IsNotQEOrCOH<CVUniverse>());
   //------------------------------------------
   // -- pion bands
-  //signalDefinition.emplace_back(new Jtruth::NTrueParticles<CVUniverse>("0 pi+", 0, pipPDG));
-  //signalDefinition.emplace_back(new Jtruth::NTrueParticles<CVUniverse>("2 pi0", 2, pi0PDG));
+  //signalDefinition.emplace_back(new Jtruth::NTrueParticles<CVUniverse>("1 pi+", 1, pipPDG));
+  //signalDefinition.emplace_back(new Jtruth::NTrueParticles<CVUniverse>("0 pi0", 0, pi0PDG));
   //signalDefinition.emplace_back(new Jtruth::AtLeastNParticles<CVUniverse>(">= 2pi+", 2, pipPDG));
   //signalDefinition.emplace_back(new Jtruth::FormalNegationOfPionBand<CVUniverse>());
   // -- nucleon bands
@@ -479,13 +479,15 @@ int main(const int argc, const char** argv)
       johnsQ2Bins = {0., 0.02, 0.04, 0.06, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0},
       //johnsTBins = {0., 1.e+2, 2.e+2, 3.e+2, 4.e+2, 5.e+2, 6.e+2, 7.e+2, 8.e+2, 9.e+2, 1.e+3, 1.5e+3, 2.e+3, 2.5e+3, 3.e+3}, // NO THAT WAS FOR SQRT(|t|)!!
       johnsTBins = {0., 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.25, 0.3, 0.35, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.},
+      johnsTMeVBins = {0., 2.5e+4, 5.0e+4, 7.5e+4, 1.0e+5, 1.25e+5, 1.5e+5, 1.75e+5, 2.0e+5, 2.5e+5, 3.0e+5, 3.5e+5, 4.0e+5, 5.0e+5, 6.0e+5, 7.0e+5, 8.0e+5, 9.0e+5, 1.0e+6},
       johnsFineTBins = {0., 0.025, 0.05, 0.075, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.325, 0.35, 0.375, 0.4, 0.425, 0.45, 0.475, 0.5, 0.525, 0.55, 0.575, 0.6, 0.625, 0.65, 0.675, 0.7, 0.725, 0.75, 0.775, 0.8, 0.825, 0.85, 0.875, 0.9, 0.925, 0.95, 0.975, 1.},
       johnsEmuBins = {0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20.},
       johnsEhadBins = {0., 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0},
       johnsEnuBins = {0., 0.5, 1., 1.5, 2., 2.5, 3., 3.5, 4., 4.5, 5., 5.5, 6., 6.5, 7., 7.5, 8., 8.5, 9., 9.5, 10., 10.5, 11., 11.5, 12., 12.5, 13., 13.5, 14., 14.5, 15., 15.5, 16., 16.5, 17., 17.5, 18., 18.5, 19., 19.5, 20.},
-      johnsThetaMuPiBins = {0., 1., 2., 3., 4., 5., 10., 15., 20., 25., 30., 40., 50.},
+      johnsThetaMuPiBins = {0., 5., 10., 12., 14., 16., 18., 20., 22., 24., 26., 28., 30., 32., 34., 36., 38., 40., 42., 44., 46., 48., 50., 55., 60.},
       johnsThetaMuBins = {0.,2.,4.,6.,8.,10.,12.,14.,16.,18.,20.},
       johnsThetaHadBins = {0.,2.,4.,6.,8.,10.,12.,14.,16.,18.,20.,30.,40.,55.,70.},
+      johnsMMuPiBins = {0., 100., 200., 300., 400., 500., 600., 700., 800., 900., 1000., 1100., 1200., 1300., 1400., 1500., 1600., 1700., 1800., 1900., 2000.},
       johnsWBins = {0., 500., 600., 700., 800., 900., 1000., 1100., 1200., 1300., 1400., 1500., 1600., 1700., 1800., 1900., 2000., 2200., 2400., 2600., 2800., 3000.},
       johnsSysWBins = {100., 150., 200., 250., 300., 350., 400., 450., 500., 600., 700., 800., 900., 1000., 1250., 1500., 2000., 2500., 3000.},
       // now direct branches
@@ -511,54 +513,66 @@ int main(const int argc, const char** argv)
       double elo = -200.0 + j * 50.0; johnsPTPiBins.push_back(elo);
   }
 
-  for(Int_t j = 0; j < 76; j++){
-      double elo = j * 200.0; johnsEMuBins.push_back(elo);
+  for(Int_t j = 0; j < 26; j++){
+      double elo = j * 400.0; johnsEMuBins.push_back(elo);
   }
 
-  for(Int_t j = 0; j < 81; j++){
-      double elo = -1000.0 + j * 200.0; johnsPzMuBins.push_back(elo);
+  for(Int_t j = 0; j < 22; j++){
+      double elo = -400.0 + j * 400.0; johnsPzMuBins.push_back(elo);
   }
 
   for(Int_t j = 0; j < 17; j++){
       double elo = -400.0 + j * 50.0; johnsPTMuBins.push_back(elo);
   }
 
-  for(Int_t j = 0; j < 41; j++){
-      double elo = -1000.0 + j * 50.0; johnsPTSysBins.push_back(elo);
+  for(Int_t j = 0; j < 21; j++){
+      double elo = -500.0 + j * 50.0; johnsPTSysBins.push_back(elo);
   }
 
-  for(Int_t j = 0; j < 41; j++){
-      double elo = -1000.0 + j * 50.0; johnsPzSysBins.push_back(elo);
+  for(Int_t j = 0; j < 11; j++){
+      double elo = -100.0 + j * 50.0; johnsPzSysBins.push_back(elo);
   }
 
-  for(Int_t j = 0; j < 41; j++){
-      double elo = -1000.0 + j * 50.0; johnsESysBins.push_back(elo);
+  for(Int_t j = 0; j < 9; j++){
+      double elo = -100.0 + j * 25.0; johnsESysBins.push_back(elo);
   }
 
   const double robsRecoilBinWidth = 50; //MeV
   for(int whichBin = 0; whichBin < 100 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
 
   std::vector<Variable*> vars = {
-      new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue),
+      new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), // 0
       new Variable("pionE", "E_{#pi} [MeV]", johnsEPiBins, &CVUniverse::GetEpi, &CVUniverse::GetEpiTrue),
       new Variable("pionP", "p_{#pi} [MeV]", johnsEPiBins, &CVUniverse::GetPpi, &CVUniverse::GetPpiTrue),
       new Variable("pionPx", "p_{x;#pi} [MeV]", johnsPTPiBins, &CVUniverse::GetPxpi, &CVUniverse::GetPxpiTrue),
-      new Variable("pionPy", "p_{y;#pi} [MeV]", johnsPTPiBins, &CVUniverse::GetPypi, &CVUniverse::GetPypiTrue),
+      new Variable("pionPy", "p_{y;#pi} [MeV]", johnsPTPiBins, &CVUniverse::GetPypi, &CVUniverse::GetPypiTrue), // 4
       new Variable("pionPz", "p_{z;#pi} [MeV]", johnsPzPiBins, &CVUniverse::GetPzpi, &CVUniverse::GetPzpiTrue),
       new Variable("muonE", "E_{#mu} [MeV]", johnsEMuBins, &CVUniverse::GetEmuMAD, &CVUniverse::GetEmuMADTrue),
       new Variable("muonPx", "p_{x;#mu} [MeV]", johnsPTMuBins, &CVUniverse::GetPxmuWrtNuBeam, &CVUniverse::GetPxmuTrueWrtNuBeam),
       new Variable("muonPy", "p_{y;#mu} [MeV]", johnsPTMuBins, &CVUniverse::GetPymuWrtNuBeam, &CVUniverse::GetPymuTrueWrtNuBeam),
-      new Variable("muonPz", "p_{z;#mu} [MeV]", johnsPzMuBins, &CVUniverse::GetPzmuWrtNuBeam, &CVUniverse::GetPzmuTrueWrtNuBeam),
+      new Variable("muonPz", "p_{z;#mu} [MeV]", johnsPzMuBins, &CVUniverse::GetPzmuWrtNuBeam, &CVUniverse::GetPzmuTrueWrtNuBeam), // 9
       new Variable("Enu", "E_{#nu} [MeV]", johnsEMuBins, &CVUniverse::GetEnu, &CVUniverse::GetEnuTrue),
       new Variable("sysE", "E_{sys} [MeV]", johnsESysBins, &CVUniverse::GetSys4VE, &CVUniverse::GetSys4VETrue),
       new Variable("sysPx", "p_{x;sys} [MeV]", johnsPTSysBins, &CVUniverse::GetSys4VPx, &CVUniverse::GetSys4VPxTrue),
       new Variable("sysPy", "p_{y;sys} [MeV]", johnsPTSysBins, &CVUniverse::GetSys4VPy, &CVUniverse::GetSys4VPyTrue),
-      new Variable("sysPz", "p_{z;sys} [MeV]", johnsPzSysBins, &CVUniverse::GetSys4VPz, &CVUniverse::GetSys4VPzTrue),
-      new Variable("AbsT", "|t| [GeV]", johnsTBins, &CVUniverse::GetAbsTGeV, &CVUniverse::GetAbsTTrueGeV),
-      //new Variable("AlexAbsT", "|t|_{COH} [GeV]", johnsTBins, &CVUniverse::GetAlexAbsTGeV, &CVUniverse::GetAlexAbsTTrue),
+      new Variable("sysPz", "p_{z;sys} [MeV]", johnsPzSysBins, &CVUniverse::GetSys4VPz, &CVUniverse::GetSys4VPzTrue), // 14
+      new Variable("AbsT", "|t| [(GeV)^{2}]", johnsTBins, &CVUniverse::GetAbsTGeV, &CVUniverse::GetAbsTTrueGeV),
+      new Variable("AlexAbsT", "|t|_{COH} [(GeV)^{2}]", johnsTBins, &CVUniverse::GetAlexAbsTGeV, &CVUniverse::GetAlexAbsTTrueGeV),
+      new Variable("Q2", "Q^{2} [(GeV)^{2}]", johnsQ2Bins, &CVUniverse::GetCOHQ2GeV, &CVUniverse::GetCOHQ2TrueGeV),
+      new Variable("thetaMuPi", "#theta_{#mu#pi} [#circ]", johnsThetaMuPiBins, &CVUniverse::GetThetaMuPiDeg, &CVUniverse::GetThetaMuPiTrueDeg),
+      new Variable("MMuPi", "M_{#mu#pi} [MeV]", johnsMMuPiBins, &CVUniverse::GetMMuPi, &CVUniverse::GetMMuPiTrue), // 19
   };
 
-  std::vector<Variable2D*> vars2D; /* = {
+  std::vector<Variable2D*> vars2D = {
+      new Variable2D(*vars[15], *vars[16]),
+      new Variable2D(*vars[15], *vars[17]),
+      new Variable2D(*vars[15], *vars[18]),
+      new Variable2D(*vars[15], *vars[19]),
+      new Variable2D(*vars[17], *vars[18]),
+      new Variable2D(*vars[17], *vars[19]),
+      new Variable2D(*vars[18], *vars[19]),
+  };
+  /* = {
       new Variable2D(*vars[11], *vars[10])
       }; */
   
