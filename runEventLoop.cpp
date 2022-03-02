@@ -180,7 +180,7 @@ void LoopAndFillEventSelection(
 		  var->resolution->FillUniverse(universe, vfill, weight );
 
 		  if( vden != 1.0 ){ var->fractionalResolution->FillUniverse( universe, vfill / vden, weight ); }
-		  var->resolution2D->FillUniverse(universe, vfill, vreco, weight);
+		  var->resolution2D->FillUniverse(universe, vfill, vtrue, weight);
 		  
 	      } // if(isPhaseSpace)
 	  } // for(auto & var: resolutions)
