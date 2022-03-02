@@ -39,6 +39,12 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
       selectedSignalReco = new Hist((GetName() + "_selected_signal_reco").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
       selectedMCReco = new Hist((GetName() + "_selected_mc_reco").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
       migration = new PlotUtils::Hist2DWrapper<CVUniverse>((GetName() + "_migration").c_str(), GetName().c_str(), GetBinVec(), GetBinVec(), mc_error_bands);
+
+      resolution = new Hist((GetName() + "_resolution").c_str(), GetName().c_str(), GetBinVec(), mc_error_bands);
+      std::vector<double> fracVec;
+      for(Int_t j = 0; j < 41; j++) fracVec.emplace_back( -1.00 + 0.05*j );
+      fractionalResolution = new Hist((GetName() + "_fractional_resolution").c_str(), GetName().c_str(), fracVec, mc_error_bands);
+      resolution2D = new PlotUtils::Hist2DWrapper<CVUniverse>((GetName() + "_resolution_2D").c_str(), GetName().c_str(), GetBinVec(), GetBinVec(), mc_error_bands);
     }
 
     //Histograms to be filled
@@ -50,6 +56,10 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
                               //Also useful for a bakground breakdown plot that you'd use to start background subtraction studies.
     Hist* selectedMCReco; //Treat the MC CV just like data for the closure test
     PlotUtils::Hist2DWrapper<CVUniverse>* migration;
+    
+    Hist* resolution; // (reco - true) for signal events only
+    Hist* fractionalResolution; // (reco-true) / true for signal events only
+    PlotUtils::Hist2DWrapper<CVUniverse>* resolution2D;
 
     void InitializeDATAHists(std::vector<CVUniverse*>& data_error_bands)
     {
@@ -119,6 +129,9 @@ class Variable: public PlotUtils::VariableBase<CVUniverse>
       if(selectedSignalReco) selectedSignalReco->SyncCVHistos();
       if(selectedMCReco) selectedMCReco->SyncCVHistos();
       if(migration) migration->SyncCVHistos();
+      if(resolution) resolution->SyncCVHistos();
+      if(fractionalResolution) fractionalResolution->SyncCVHistos();
+      if(resolution2D) resolution2D->SyncCVHistos();
     }
 };
 

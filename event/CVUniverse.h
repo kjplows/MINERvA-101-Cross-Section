@@ -395,29 +395,44 @@ public:
     double GetPxpiCorr( ) const // wrt nu beam
     {
 	//const int leadIdx = GetLeadingHadronIndex();
+	/* Broken branches, gotta fix
 	const int leadIdx = GetBestPionIndex();
 	return GetVecElem( ( GetAnaToolName()+"_hadron_pion_px_corr" ).c_str(), leadIdx );
+	*/
+
+	return GetPpiCorr() * GetPxpiWrtBeam() / GetPpi();
     }
     
     double GetPypiCorr( ) const // wrt nu beam
     {
 	//const int leadIdx = GetLeadingHadronIndex();
+	/* broken branches
 	const int leadIdx = GetBestPionIndex();
 	return GetVecElem( ( GetAnaToolName()+"_hadron_pion_py_corr" ).c_str(), leadIdx );
+	*/
+
+	return GetPpiCorr() * GetPypiWrtBeam() / GetPpi();
     }
 
     double GetPzpiCorr( ) const // wrt nu beam
     {
 	//const int leadIdx = GetLeadingHadronIndex();
+	/* broken branches
 	const int leadIdx = GetBestPionIndex();
 	return GetVecElem( ( GetAnaToolName()+"_hadron_pion_pz_corr" ).c_str(), leadIdx );
+	*/
+	return GetPpiCorr() * GetPzpiWrtBeam() / GetPpi();
     }
 
     double GetPpiCorr( ) const // MeV
     {
 	//const int leadIdx = GetLeadingHadronIndex();
+	/* broken branches
 	const int leadIdx = GetBestPionIndex();
 	return GetVecElem( ( GetAnaToolName()+"_hadron_pion_p_corr" ).c_str(), leadIdx );
+	*/
+
+	return std::sqrt( GetEpiCorr() * GetEpiCorr() - MinervaUnits::M_pion * MinervaUnits::M_pion );
     }
 
     double GetThetapi( ) const // rad, wrt nu beam
@@ -474,7 +489,13 @@ public:
 
     // uncorrected branches here... safe with MAD 1.53
 
+    // change this branch for different definitions of Epi
     double GetEpi( ) const // MeV
+    {
+	return GetEpiRaw();
+    }
+    
+    double GetEpiRaw( ) const // MeV
     {
 	// enforce selection on ~*leading* hadron~ best pion candidate!
 	//const int leadIdx = GetLeadingHadronIndex();
@@ -482,6 +503,18 @@ public:
 	return GetVecElem( ( GetAnaToolName() + "_pion_E" ).c_str(), leadIdx );
 
 	//return GetEpiMatchedTrue( ); // to see what happens!
+    }
+
+    double GetEpiRawScaled( ) const // MeV, calorimetric scaling factor applied here
+    {
+	const double alpha = 2.11609; // from getScaleFactor
+	return GetEpiRaw() * alpha;
+    }
+
+    double GetEpiCorrScaled( ) const // MeV
+    {
+	const double alpha = 2.07734;
+	return GetEpiCorr() * alpha;
     }
 
     double GetEpiGeV( ) const
@@ -775,6 +808,15 @@ public:
 
 	ROOT::Math::PxPyPzEVector sys4V = nu4V - mu4V - pi4V;
 	return std::abs(sys4V.M() * sys4V.M());
+    }
+
+    // and a resolution
+
+    double GetResAbsT() const {
+	const double treco = GetAbsT(); // MeV^2
+	const double ttrue = GetAbsTTrue(); // MeV^2
+
+	return ( treco - ttrue ) / ttrue;
     }
 
     // some diagnostics for sys4V
