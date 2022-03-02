@@ -186,7 +186,7 @@ namespace Jreco
 	
     }; // class IsPion
 
-    // -- E-vtx cut pending distributions of COH evts & cuts up to here
+    // -- E-vtx cut
 
     template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
     class VtxECut: public PlotUtils::Cut<UNIVERSE, EVENT>
@@ -207,7 +207,25 @@ namespace Jreco
 	
     }; // class VtxECut
 
-    // -- |t| cut pending distributions
+    // -- |t| cut
+
+    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
+    class TCut: public PlotUtils::Cut<UNIVERSE, EVENT>
+    {
+    public:
+	TCut( const std::string & name, double Thigh ):
+	    PlotUtils::Cut<UNIVERSE, EVENT>(name), fThigh(Thigh) {}
+
+    private:
+	bool checkCut(const UNIVERSE& univ, EVENT & /* evt */) const override
+	{
+	    const double AbsT = univ.GetAbsTGeV();
+	    return ( fThigh >= AbsT );
+	}
+
+	double fThigh;
+	
+    }; // class VtxECut
     
 } // namespace Jreco
 

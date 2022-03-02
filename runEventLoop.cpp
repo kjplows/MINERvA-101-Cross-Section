@@ -98,6 +98,7 @@ void LoopAndFillEventSelection(
     std::map<std::string, std::vector<CVUniverse*> > error_bands,
     std::vector<Variable*> vars,
     std::vector<Variable2D*> vars2D,
+    std::vector<Variable*> resolutions,
     std::vector<Study*> studies,
     PlotUtils::Cutter<CVUniverse, MichelEvent>& michelcuts,
     PlotUtils::Model<CVUniverse, MichelEvent>& model)
@@ -110,6 +111,8 @@ void LoopAndFillEventSelection(
   for (int i=0; i<nEntries; ++i)
   {
     if(i%1000==0) std::cout << i << " / " << nEntries << "\r" << std::flush;
+
+      //if(i >= 20000){std::cout << "HIT CEILING AND EXITING" << std::endl; exit(0);}
 
     MichelEvent cvEvent;
     cvUniv->SetEntry(i);
@@ -139,23 +142,48 @@ void LoopAndFillEventSelection(
 
         const bool isSignal = michelcuts.isSignal(*universe, weight);
 
+	const bool isPhaseSpace = michelcuts.isPhaseSpace(*universe, weight);
+
         if(isSignal)
         {
+	    
           for(auto& study: studies) study->SelectedSignal(*universe, myevent, weight);
 
           for(auto& var: vars)
           {
             //Cross section components
-            var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight);
-            var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight);
-            var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight); //Efficiency numerator in reco variables.  Useful for warping studies.
+	      if(isPhaseSpace){
+		  var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValue(*universe), weight);
+		  var->migration->FillUniverse(universe, var->GetRecoValue(*universe), var->GetTrueValue(*universe), weight);
+		  var->selectedSignalReco->FillUniverse(universe, var->GetRecoValue(*universe), weight); //Efficiency numerator in reco variables.  Useful for warping studies.
+	      }
           }
 
           for(auto& var: vars2D)
           {
-            var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight);
-	    //var->recoCorrelation->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight);
+	      if(isPhaseSpace){
+		  var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight);
+		  //var->efficiencyNumerator->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight); // lazy!
+		  //var->recoCorrelation->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight);
+	      }
           }
+
+	  for(auto& var: resolutions)
+	  {
+	      //Grab reco and true value and fill the resolution histo
+	      const double vreco = var->GetRecoValue(*universe);
+	      const double vtrue = var->GetTrueValue(*universe);
+	      const double vden = ( vtrue != 0.0 ) ? vtrue : 1.0;
+	      
+	      const double vfill = ( vreco - vtrue );
+	      if(isPhaseSpace){
+		  var->resolution->FillUniverse(universe, vfill, weight );
+
+		  if( vden != 1.0 ){ var->fractionalResolution->FillUniverse( universe, vfill / vden, weight ); }
+		  var->resolution2D->FillUniverse(universe, vfill, vreco, weight);
+		  
+	      } // if(isPhaseSpace)
+	  } // for(auto & var: resolutions)
         }
         else
         {
@@ -373,13 +401,14 @@ int main(const int argc, const char** argv)
   const double maxMuTheta = 20.; //deg
   //const double minEnu = 2.0, maxEnu = 20.0; //GeV, see Alex's thesis
   const double minEnu = 2.0, maxEnu = 50.0, medEnu = 20.0; //GeV
-  const double minW = 0.0, maxW = 1.4; // GeV [LOW]
+  //const double minW = 0.0, maxW = 1.4; // GeV [LOW]
   //const double minW = 1.4, maxW = 2.0; // GeV [MED]
   //const double minW = 2.0, maxW = 1e+5; // GeV [HIGH]
 
   const int distmm = 200; // up to how far from vtx do we look for energy depositions
   // note this isn't an argument in the actual Cut, you'll have to modify manually
   const double vtxELow = 10.0, vtxEHigh = 60.0; // highest by eff * pur
+  const double Thigh = 0.15; // GeV^2
   
   const int pPDG = 2212, nPDG = 2112, pipPDG = 211, pimPDG = -211, pi0PDG = 111;
 
@@ -398,9 +427,10 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new Jreco::ContainedHadron<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::IsPion<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::EnuRange<CVUniverse, MichelEvent>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
-  //WIP: testing Evtx
+  // vtx energy cut
   preCuts.emplace_back(new Jreco::VtxECut<CVUniverse, MichelEvent>(Form("%1.1f <= E_vtx (%d mm) <= %1.1f [MeV]", vtxELow, distmm, vtxEHigh), vtxELow, vtxEHigh));
-  //TODO: Add |t|
+  //WIP: testing |t|
+  //preCuts.emplace_back(new Jreco::TCut<CVUniverse, MichelEvent>(Form("|t| [GeV^{2}] <= %1.2f", Thigh), Thigh));
   //==========================================================
   // Sidebands are specific non-signal events that I wanna analyse
   //==========================================================
@@ -497,6 +527,7 @@ int main(const int argc, const char** argv)
       johnsPTPiBins, johnsPzPiBins, johnsEPiBins,
       johnsPTMuBins, johnsPzMuBins, johnsEMuBins,
       johnsPTSysBins, johnsPzSysBins, johnsESysBins;
+  
   for(Int_t j = 0; j < 101; j++){
       double elo = j * 5.0; johnsEvtxBins.push_back(elo); johnsERecoilBins.push_back(elo);
   }
@@ -561,9 +592,71 @@ int main(const int argc, const char** argv)
       new Variable("Q2", "Q^{2} [(GeV)^{2}]", johnsQ2Bins, &CVUniverse::GetCOHQ2GeV, &CVUniverse::GetCOHQ2TrueGeV),
       new Variable("thetaMuPi", "#theta_{#mu#pi} [#circ]", johnsThetaMuPiBins, &CVUniverse::GetThetaMuPiDeg, &CVUniverse::GetThetaMuPiTrueDeg),
       new Variable("MMuPi", "M_{#mu#pi} [MeV]", johnsMMuPiBins, &CVUniverse::GetMMuPi, &CVUniverse::GetMMuPiTrue), // 19
+      new Variable("Evtx", "E_{vtx} [MeV]", johnsEvtxBins, &CVUniverse::GetERecoilVtx200mm, &CVUniverse::GetEpiTrue),
   };
 
+  // bins for resolution studies
+
+  const double PTMuHigh = std::max( std::abs( dansPTBins.at(0) ), std::abs( dansPTBins.at( dansPTBins.size() - 1 ) ) ) / 4.0;
+  const double PzMuHigh = std::max( std::abs( johnsPzMuBins.at(0) ), std::abs( johnsPzMuBins.at( johnsPzMuBins.size() - 1 ) ) ) / 2.0;
+  const double EMuHigh = std::max( std::abs( johnsEMuBins.at(0) ), std::abs( johnsEMuBins.at( johnsEMuBins.size() - 1 ) ) ) / 2.0;
+  const double PTPiHigh = std::max( std::abs( johnsPTPiBins.at(0) ), std::abs( johnsPTPiBins.at( johnsPTPiBins.size() - 1 ) ) );
+  const double PzPiHigh = std::max( std::abs( johnsPzPiBins.at(0) ), std::abs( johnsPzPiBins.at( johnsPzPiBins.size() - 1 ) ) );
+  const double EPiHigh = std::max( std::abs( johnsEPiBins.at(0) ), std::abs( johnsEPiBins.at( johnsEPiBins.size() - 1 ) ) );
+  const double PTSysHigh = std::max( std::abs( johnsPTSysBins.at(0) ), std::abs( johnsPTSysBins.at( johnsPTSysBins.size() - 1 ) ) );
+  const double PzSysHigh = std::max( std::abs( johnsPzSysBins.at(0) ), std::abs( johnsPzSysBins.at( johnsPzSysBins.size() - 1 ) ) ) / 2.0;
+  const double ESysHigh = std::max( std::abs( johnsESysBins.at(0) ), std::abs( johnsESysBins.at( johnsESysBins.size() - 1 ) ) ) / 4.0;
+  const double THigh = std::max( std::abs( johnsTBins.at(0) ), std::abs( johnsTBins.at( johnsTBins.size() - 1 ) ) ) / 4.0;
+  const double Q2High = std::max( std::abs( johnsQ2Bins.at(0) ), std::abs( johnsQ2Bins.at( johnsQ2Bins.size() - 1 ) ) ) / 4.0;
+  const double thetaMuPiHigh = std::max( std::abs( johnsThetaMuPiBins.at(0) ), std::abs( johnsThetaMuPiBins.at( johnsThetaMuPiBins.size() - 1 ) ) ) / 2.0;
+  const double MMuPiHigh = std::max( std::abs( johnsMMuPiBins.at(0) ), std::abs( johnsMMuPiBins.at( johnsMMuPiBins.size() - 1 ) ) ) / 2.0;
+
+  std::vector<double> resPTMuBins, resPzMuBins, resEMuBins, resPTPiBins, resPzPiBins, resEPiBins, resPTSysBins, resPzSysBins, resESysBins, resTBins, resQ2Bins, resThetaMuPiBins, resMMuPiBins;
+
+  for( auto j = 0; j < 101; j++ ) {
+      resPTMuBins.emplace_back( PTMuHigh * ( -1.0 + 0.02 * j ) );
+      resPzMuBins.emplace_back( PzMuHigh * ( -1.0 + 0.02 * j ) );
+      resEMuBins.emplace_back( EMuHigh * ( -1.0 + 0.02 * j ) );
+      resPTPiBins.emplace_back( PTPiHigh * ( -1.0 + 0.02 * j ) );
+      resPzPiBins.emplace_back( PzPiHigh * ( -1.0 + 0.02 * j ) );
+      resEPiBins.emplace_back( EPiHigh * ( -1.0 + 0.02 * j ) );
+      resPTSysBins.emplace_back( PTSysHigh * ( -1.0 + 0.02 * j ) );
+      resPzSysBins.emplace_back( PzSysHigh * ( -1.0 + 0.02 * j ) );
+      resESysBins.emplace_back( ESysHigh * ( -1.0 + 0.02 * j ) );
+      resTBins.emplace_back( THigh * ( -1.0 + 0.02 * j ) );
+      resQ2Bins.emplace_back( Q2High * ( -1.0 + 0.02 * j ) );
+      resThetaMuPiBins.emplace_back( thetaMuPiHigh * ( -1.0 + 0.02 * j ) );
+      resMMuPiBins.emplace_back( MMuPiHigh * ( -1.0 + 0.02 * j ) );
+  }
+  
+  std::vector<Variable*> res = {
+      new Variable("pTmu", "p_{T, #mu} [GeV/c]", resPTMuBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), // 0
+      new Variable("pionE", "E_{#pi} [MeV]", resEPiBins, &CVUniverse::GetEpi, &CVUniverse::GetEpiTrue),
+      new Variable("pionP", "p_{#pi} [MeV]", resEPiBins, &CVUniverse::GetPpi, &CVUniverse::GetPpiTrue),
+      new Variable("pionPx", "p_{x;#pi} [MeV]", resPTPiBins, &CVUniverse::GetPxpi, &CVUniverse::GetPxpiTrue),
+      new Variable("pionPy", "p_{y;#pi} [MeV]", resPTPiBins, &CVUniverse::GetPypi, &CVUniverse::GetPypiTrue), // 4
+      new Variable("pionPz", "p_{z;#pi} [MeV]", resPzPiBins, &CVUniverse::GetPzpi, &CVUniverse::GetPzpiTrue),
+      new Variable("muonE", "E_{#mu} [MeV]", resEMuBins, &CVUniverse::GetEmuMAD, &CVUniverse::GetEmuMADTrue),
+      new Variable("muonPx", "p_{x;#mu} [MeV]", resPTMuBins, &CVUniverse::GetPxmuWrtNuBeam, &CVUniverse::GetPxmuTrueWrtNuBeam),
+      new Variable("muonPy", "p_{y;#mu} [MeV]", resPTMuBins, &CVUniverse::GetPymuWrtNuBeam, &CVUniverse::GetPymuTrueWrtNuBeam),
+      new Variable("muonPz", "p_{z;#mu} [MeV]", resPzMuBins, &CVUniverse::GetPzmuWrtNuBeam, &CVUniverse::GetPzmuTrueWrtNuBeam), // 9
+      new Variable("Enu", "E_{#nu} [MeV]", resEMuBins, &CVUniverse::GetEnu, &CVUniverse::GetEnuTrue),
+      new Variable("sysE", "E_{sys} [MeV]", resESysBins, &CVUniverse::GetSys4VE, &CVUniverse::GetSys4VETrue),
+      new Variable("sysPx", "p_{x;sys} [MeV]", resPTSysBins, &CVUniverse::GetSys4VPx, &CVUniverse::GetSys4VPxTrue),
+      new Variable("sysPy", "p_{y;sys} [MeV]", resPTSysBins, &CVUniverse::GetSys4VPy, &CVUniverse::GetSys4VPyTrue),
+      new Variable("sysPz", "p_{z;sys} [MeV]", resPzSysBins, &CVUniverse::GetSys4VPz, &CVUniverse::GetSys4VPzTrue), // 14
+      new Variable("AbsT", "|t| [(GeV)^{2}]", resTBins, &CVUniverse::GetAbsTGeV, &CVUniverse::GetAbsTTrueGeV),
+      new Variable("AlexAbsT", "|t|_{COH} [(GeV)^{2}]", resTBins, &CVUniverse::GetAlexAbsTGeV, &CVUniverse::GetAlexAbsTTrueGeV),
+      new Variable("Q2", "Q^{2} [(GeV)^{2}]", resQ2Bins, &CVUniverse::GetCOHQ2GeV, &CVUniverse::GetCOHQ2TrueGeV),
+      new Variable("thetaMuPi", "#theta_{#mu#pi} [#circ]", resThetaMuPiBins, &CVUniverse::GetThetaMuPiDeg, &CVUniverse::GetThetaMuPiTrueDeg),
+      new Variable("MMuPi", "M_{#mu#pi} [MeV]", resMMuPiBins, &CVUniverse::GetMMuPi, &CVUniverse::GetMMuPiTrue), // 19
+      };
+
   std::vector<Variable2D*> vars2D = {
+      new Variable2D(*vars[1], *vars[17]),
+      new Variable2D(*vars[1], *vars[6]),
+      new Variable2D(*vars[1], *vars[20]),
+      /*
       new Variable2D(*vars[15], *vars[16]),
       new Variable2D(*vars[15], *vars[17]),
       new Variable2D(*vars[15], *vars[18]),
@@ -571,6 +664,7 @@ int main(const int argc, const char** argv)
       new Variable2D(*vars[17], *vars[18]),
       new Variable2D(*vars[17], *vars[19]),
       new Variable2D(*vars[18], *vars[19]),
+      */
   };
   /* = {
       new Variable2D(*vars[11], *vars[10])
@@ -597,10 +691,11 @@ int main(const int argc, const char** argv)
   //remind myself which variables I am using
   std::cout << "====================================================\n\tUsing the following variables:\n";
   for(auto& var: vars) std::cout << (var->GetName()).c_str() << " ";
-  std::cout << "\n==================================================\n\n" << std::endl;
+  std::cout << "\n====================================================\n\n" << std::endl;
 
   for(auto& var: vars) var->InitializeMCHists(error_bands, truth_bands);
   for(auto& var: vars) var->InitializeDATAHists(data_band);
+  for(auto& var: res) var->InitializeMCHists(error_bands, truth_bands);
 
   for(auto& var: vars2D) var->InitializeMCHists(error_bands, truth_bands);
   for(auto& var: vars2D) var->InitializeDATAHists(data_band);
@@ -609,7 +704,7 @@ int main(const int argc, const char** argv)
   try
   {
     CVUniverse::SetTruth(false);
-    LoopAndFillEventSelection(options.m_mc, error_bands, vars, vars2D, studies, mycuts, model);
+    LoopAndFillEventSelection(options.m_mc, error_bands, vars, vars2D, res, studies, mycuts, model);
     CVUniverse::SetTruth(true);
     LoopAndFillEffDenom(options.m_truth, truth_bands, vars, vars2D, mycuts, model);
     options.PrintMacroConfiguration(argv[0]);
@@ -630,6 +725,28 @@ int main(const int argc, const char** argv)
 
     for(auto& study: studies) study->SaveOrDraw(*mcOutDir);
     for(auto& var: vars) var->WriteMC(*mcOutDir);
+    for(auto& var: res){ // write resolution histos
+	if(var->resolution && var->resolution->hist->GetEntries() != 0)
+	{
+	    mcOutDir->cd();
+	    var->resolution->hist->SetDirectory(&(*mcOutDir));
+	    var->resolution->hist->Write((var->GetName() + "_resolution").c_str());
+	}
+
+	if(var->fractionalResolution && var->fractionalResolution->hist->GetEntries() != 0)
+	{
+	    mcOutDir->cd();
+	    var->fractionalResolution->hist->SetDirectory(&(*mcOutDir));
+	    var->fractionalResolution->hist->Write((var->GetName() + "_fractional_resolution").c_str());
+	}
+
+	if(var->resolution2D && var->resolution2D->hist->GetEntries() != 0)
+	{
+	    mcOutDir->cd();
+	    var->resolution2D->hist->SetDirectory(&(*mcOutDir));
+	    var->resolution2D->hist->Write((var->GetName() + "_resolution2D").c_str());
+	}
+    }
     for(auto& var: vars2D) var->Write(*mcOutDir);
 
     //Protons On Target
