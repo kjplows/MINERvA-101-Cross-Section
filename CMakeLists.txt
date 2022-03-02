@@ -74,6 +74,10 @@ add_executable(runEventLoop runEventLoop.cpp)
 target_link_libraries(runEventLoop ${ROOT_LIBRARIES} util MAT MAT-MINERvA) #event cuts studies systematics)
 install(TARGETS runEventLoop DESTINATION bin)
 
+add_executable(getScaleFactor getScaleFactor.cpp)
+target_link_libraries(getScaleFactor ${ROOT_LIBRARIES} util MAT MAT-MINERvA) #event cuts studies systematics)
+install(TARGETS getScaleFactor DESTINATION bin)
+
 add_executable(ExtractCrossSection ExtractCrossSection.cpp)
 target_link_libraries(ExtractCrossSection ${ROOT_LIBRARIES} util MAT UnfoldUtils)
 install(TARGETS ExtractCrossSection DESTINATION bin)
