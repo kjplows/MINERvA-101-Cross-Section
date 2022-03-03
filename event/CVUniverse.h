@@ -499,8 +499,10 @@ public:
     {
 	// enforce selection on ~*leading* hadron~ best pion candidate!
 	//const int leadIdx = GetLeadingHadronIndex();
-	const int leadIdx = GetBestPionIndex();
-	return GetVecElem( ( GetAnaToolName() + "_pion_E" ).c_str(), leadIdx );
+	//const int leadIdx = GetBestPionIndex();
+	//return GetVecElem( ( GetAnaToolName() + "_pion_E" ).c_str(), leadIdx ); // dEdx, bad!
+
+	return GetDouble( ( GetAnaToolName() + "_recoil_E" ).c_str() ); // better estimator!
 
 	//return GetEpiMatchedTrue( ); // to see what happens!
     }
