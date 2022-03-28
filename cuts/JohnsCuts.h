@@ -84,6 +84,22 @@ namespace Jreco
 	
     }; // class HasMINOSMatch
 
+    template <class UNIVERSE, class EVENT = PlotUtils::detail::empty>
+    class IsNueCandidate: public PlotUtils::Cut<UNIVERSE, EVENT>
+    {
+
+    public:
+	IsNueCandidate(): PlotUtils::Cut<UNIVERSE, EVENT>("Is nue candidate") {}
+
+    private:
+	bool checkCut(const UNIVERSE& univ, EVENT& /*event*/) const override
+	{
+	    bool isintvtx     = univ.IsSomeInteraction();
+	    bool evtxmismatch = univ.GetIsEVertexMismatched();
+	    return isintvtx && !evtxmismatch;
+	}
+    }; // class IsNueCandidate
+
     // -- No dead time
     
 #ifndef __GCCXML__

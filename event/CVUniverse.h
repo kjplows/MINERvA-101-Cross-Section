@@ -499,10 +499,11 @@ public:
     {
 	// enforce selection on ~*leading* hadron~ best pion candidate!
 	//const int leadIdx = GetLeadingHadronIndex();
-	//const int leadIdx = GetBestPionIndex();
-	//return GetVecElem( ( GetAnaToolName() + "_pion_E" ).c_str(), leadIdx ); // dEdx, bad!
+	const int leadIdx = GetBestPionIndex();
+	return GetVecElem( ( GetAnaToolName() + "_pion_E" ).c_str(), leadIdx ); // dEdx, bad!
 
-	return GetDouble( ( GetAnaToolName() + "_recoil_E" ).c_str() ); // better estimator!
+	//return GetDouble( ( GetAnaToolName() + "_recoil_E" ).c_str() ); // better estimator!
+	//return GetDouble( ( GetAnaToolName() + "_hadron_recoil_two_track" ).c_str() );
 
 	//return GetEpiMatchedTrue( ); // to see what happens!
     }
@@ -684,6 +685,11 @@ public:
 	return GetVecElem( varBranch, iBest );
     }
 
+    double GetEpiTrueGeV( ) const
+    {
+	return GetEpiTrue( ) * 1.0e-3;
+    }
+
     double GetPxpiTrue( ) const // wrt MINERvA -- rotate by numi_beam_angle_rad for nu!
     {
 	const char * PDGBranch = "mc_FSPartPDG";
@@ -809,7 +815,7 @@ public:
 	ROOT::Math::PxPyPzEVector nu4V(0.,py,pz,Enu);
 
 	ROOT::Math::PxPyPzEVector sys4V = nu4V - mu4V - pi4V;
-	return std::abs(sys4V.M() * sys4V.M());
+	return std::abs(sys4V.M2());
     }
 
     // and a resolution
@@ -1300,10 +1306,27 @@ public:
     }
 
     //============================================
-    // Get vertex energy
-    // Get this from all Prongs assoc with vtx
+    // Here be electron reco stuff
+    // for non-muon events
     //============================================
-    // make and fill my branches with this
+
+    // RETHERE: Want to look at blob_nuefuzz_* branches?
+    
+    double GetConeEnergyVis() const {
+	return GetDouble( "ConeEnergyVis" );
+    }
+
+    double GetExtraEnergyVis() const {
+	return GetDouble( "ExtraEnergyVis" );
+    }
+
+    double GetPsi() const {
+	return GetDouble( "Psi" );
+    }
+
+    bool GetIsEVertexMismatched() const {
+	return GetInt( "HasNoVertexMismatch" ) < 1 ; // encapsulates non-nue candidates @ -1
+    }
     
     //============================================
     // Vanilla Mnv101
@@ -1362,6 +1385,11 @@ public:
     }
 
     virtual bool IsMinosMatchMuon() const {
+	return GetInt("has_interaction_vertex") == 1;
+    }
+
+    // same as above but more transparent nomenclature
+    virtual bool IsSomeInteraction() const {
 	return GetInt("has_interaction_vertex") == 1;
     }
   

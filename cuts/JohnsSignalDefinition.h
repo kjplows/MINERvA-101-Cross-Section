@@ -382,6 +382,22 @@ namespace Jtruth
     };
 
     template <class UNIVERSE>
+    class EpiRange: public PlotUtils::SignalConstraint<UNIVERSE>
+    {
+    public:
+	EpiRange(const std::string& name, const double EpiMin, const double EpiMax): PlotUtils::SignalConstraint<UNIVERSE>(name), fMin(EpiMin), fMax(EpiMax) {}
+	
+    private:
+	bool checkConstraint(const UNIVERSE& univ) const override
+	{
+	    return univ.GetEpiTrueGeV() >= fMin && univ.GetEpiTrueGeV() < fMax;
+	}
+
+	const double fMin;
+	const double fMax;
+    };
+
+    template <class UNIVERSE>
     class IsQE: public PlotUtils::SignalConstraint<UNIVERSE>
     {
     public:

@@ -162,8 +162,8 @@ void LoopAndFillEventSelection(
           for(auto& var: vars2D)
           {
 	      if(isPhaseSpace){
-		  var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight);
-		  //var->efficiencyNumerator->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight); // lazy!
+		  //var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetTrueValueY(*universe), weight); // actually what should happen
+		  var->efficiencyNumerator->FillUniverse(universe, var->GetTrueValueX(*universe), var->GetRecoValueY(*universe), weight); // lazy!
 		  //var->recoCorrelation->FillUniverse(universe, var->GetRecoValueX(*universe), var->GetRecoValueY(*universe), weight);
 	      }
           }
@@ -399,11 +399,18 @@ int main(const int argc, const char** argv)
   //==========================================================
   const double minZ = 5980, maxZ = 8422, apothem = 850; //All in mm
   const double maxMuTheta = 20.; //deg
+  
   //const double minEnu = 2.0, maxEnu = 20.0; //GeV, see Alex's thesis
   const double minEnu = 2.0, maxEnu = 50.0, medEnu = 20.0; //GeV
+  
   //const double minW = 0.0, maxW = 1.4; // GeV [LOW]
   //const double minW = 1.4, maxW = 2.0; // GeV [MED]
   //const double minW = 2.0, maxW = 1e+5; // GeV [HIGH]
+
+  //const double minEpi = 0.0, maxEpi = 0.5; // GeV [LOW]
+  //const double minEpi = 0.5, maxEpi = 1.0; // GeV [MED]
+  //const double minEpi = 1.0, maxEpi = 1.5; // GeV [HIGH]
+  //const double minEpi = 1.5, maxEpi = 10000.0; // GeV [GIGA]
 
   const int distmm = 200; // up to how far from vtx do we look for energy depositions
   // note this isn't an argument in the actual Cut, you'll have to modify manually
@@ -417,20 +424,40 @@ int main(const int argc, const char** argv)
   //==========================================================
   // Data cuts actually *remove* events that don't pass from loop
   //==========================================================
+
+  // general FV
+  
   preCuts.emplace_back(new Jreco::ZRange<CVUniverse, MichelEvent>("Tracker", minZ, maxZ));
   preCuts.emplace_back(new Jreco::Apothem<CVUniverse, MichelEvent>(apothem));
   preCuts.emplace_back(new Jreco::NoDeadtime<CVUniverse, MichelEvent>(1, "Deadtime"));
+
+  // muon cuts
+  /*
   preCuts.emplace_back(new Jreco::HasMINOSMatch<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::MINOSNumu<CVUniverse, MichelEvent>());
-  preCuts.emplace_back(new Jreco::OneHadron<CVUniverse, MichelEvent>());
   //preCuts.emplace_back(new Jreco::AtLeastOneMichel<CVUniverse, MichelEvent>()); // gotta fix?
-  preCuts.emplace_back(new Jreco::ContainedHadron<CVUniverse, MichelEvent>());
+  */
+
+  // electron cuts
+  preCuts.emplace_back(new Jreco::IsNueCandidate<CVUniverse, MichelEvent>());
+
+  // hadron cuts
+  /*    
+  preCuts.emplace_back(new Jreco::OneHadron<CVUniverse, MichelEvent>());
+  //preCuts.emplace_back(new Jreco::ContainedHadron<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::IsPion<CVUniverse, MichelEvent>());
+  */
+
+  // more special stuff
+  
   preCuts.emplace_back(new Jreco::EnuRange<CVUniverse, MichelEvent>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
+  /*
   // vtx energy cut
   preCuts.emplace_back(new Jreco::VtxECut<CVUniverse, MichelEvent>(Form("%1.1f <= E_vtx (%d mm) <= %1.1f [MeV]", vtxELow, distmm, vtxEHigh), vtxELow, vtxEHigh));
   //WIP: testing |t|
   //preCuts.emplace_back(new Jreco::TCut<CVUniverse, MichelEvent>(Form("|t| [GeV^{2}] <= %1.2f", Thigh), Thigh));
+  */
+  
   //==========================================================
   // Sidebands are specific non-signal events that I wanna analyse
   //==========================================================
@@ -438,7 +465,8 @@ int main(const int argc, const char** argv)
   //==========================================================
   // Signal definition sifts through data-OK evts
   //==========================================================
-  signalDefinition.emplace_back(new Jtruth::IsNumu<CVUniverse>());
+  //signalDefinition.emplace_back(new Jtruth::IsNumu<CVUniverse>());
+  signalDefinition.emplace_back(new Jtruth::IsNue<CVUniverse>());
   signalDefinition.emplace_back(new Jtruth::IsCC<CVUniverse>());
   //signalDefinition.emplace_back(new Jtruth::IsOther<CVUniverse>());
   //------------------------------------------
@@ -470,6 +498,7 @@ int main(const int argc, const char** argv)
   //phaseSpace.emplace_back(new Jtruth::MuonAngle<CVUniverse>(maxMuTheta));
   phaseSpace.emplace_back(new Jtruth::EnuRange<CVUniverse>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
   //phaseSpace.emplace_back(new Jtruth::WRange<CVUniverse>(Form("%1.1f <= W [GeV] < %1.1f", minW, maxW), minW, maxW));
+  //phaseSpace.emplace_back(new Jtruth::EpiRange<CVUniverse>(Form("%1.1f <= Epi [GeV] < %1.1f", minEpi, maxEpi), minEpi, maxEpi)); // for fractional Epi resolutions in different Epi bins
   //==========================================================
   
   PlotUtils::Cutter<CVUniverse, MichelEvent> mycuts(std::move(preCuts), std::move(sidebands) , std::move(signalDefinition),std::move(phaseSpace));
@@ -564,13 +593,28 @@ int main(const int argc, const char** argv)
       double elo = -100.0 + j * 50.0; johnsPzSysBins.push_back(elo);
   }
 
-  for(Int_t j = 0; j < 9; j++){
-      double elo = -100.0 + j * 25.0; johnsESysBins.push_back(elo);
+  for(Int_t j = 0; j < 13; j++){
+      double elo = -12.5 + j * 25.0 / 8.0; johnsESysBins.push_back(elo);
   }
+
+  // bins for electron reco
+  std::vector< double >
+      johnsConeEVisBins = { 0.0, 50.0, 100.0, 150.0, 200.0, 250.0, 350.0, 450.0, 600.0, 1000.0, 1500.0, 2000.0, 2500.0, 3000.0, 5000.0 },
+      johnsEExtraBins = johnsConeEVisBins,
+      johnsPsiBins = { 0.0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.0, 3.0, 5.0 };
 
   const double robsRecoilBinWidth = 50; //MeV
   for(int whichBin = 0; whichBin < 100 + 1; ++whichBin) robsRecoilBins.push_back(robsRecoilBinWidth * whichBin);
 
+  // for CC COH nue
+  std::vector<Variable*> vars = {
+      new Variable("Evis_cone", "E_{vis}^{cone} [MeV]", johnsConeEVisBins, &CVUniverse::GetConeEnergyVis, &CVUniverse::GetMuonPTTrue), // just want event distributions for now
+      new Variable("E_extra", "E_{extra} [MeV]", johnsEExtraBins, &CVUniverse::GetExtraEnergyVis, &CVUniverse::GetMuonPTTrue),
+      new Variable("Psi", "#Psi", johnsPsiBins, &CVUniverse::GetPsi, &CVUniverse::GetMuonPTTrue),
+  };
+
+  // for CC COH numu
+  /*
   std::vector<Variable*> vars = {
       new Variable("pTmu", "p_{T, #mu} [GeV/c]", dansPTBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), // 0
       new Variable("pionE", "E_{#pi} [MeV]", johnsEPiBins, &CVUniverse::GetEpi, &CVUniverse::GetEpiTrue),
@@ -594,6 +638,7 @@ int main(const int argc, const char** argv)
       new Variable("MMuPi", "M_{#mu#pi} [MeV]", johnsMMuPiBins, &CVUniverse::GetMMuPi, &CVUniverse::GetMMuPiTrue), // 19
       new Variable("Evtx", "E_{vtx} [MeV]", johnsEvtxBins, &CVUniverse::GetERecoilVtx200mm, &CVUniverse::GetEpiTrue),
   };
+  */
 
   // bins for resolution studies
 
@@ -628,7 +673,10 @@ int main(const int argc, const char** argv)
       resThetaMuPiBins.emplace_back( thetaMuPiHigh * ( -1.0 + 0.02 * j ) );
       resMMuPiBins.emplace_back( MMuPiHigh * ( -1.0 + 0.02 * j ) );
   }
-  
+
+  // for CC COH numu
+
+  /*
   std::vector<Variable*> res = {
       new Variable("pTmu", "p_{T, #mu} [GeV/c]", resPTMuBins, &CVUniverse::GetMuonPT, &CVUniverse::GetMuonPTTrue), // 0
       new Variable("pionE", "E_{#pi} [MeV]", resEPiBins, &CVUniverse::GetEpi, &CVUniverse::GetEpiTrue),
@@ -651,7 +699,13 @@ int main(const int argc, const char** argv)
       new Variable("thetaMuPi", "#theta_{#mu#pi} [#circ]", resThetaMuPiBins, &CVUniverse::GetThetaMuPiDeg, &CVUniverse::GetThetaMuPiTrueDeg),
       new Variable("MMuPi", "M_{#mu#pi} [MeV]", resMMuPiBins, &CVUniverse::GetMMuPi, &CVUniverse::GetMMuPiTrue), // 19
       };
+  */
 
+  std::vector<Variable*> res;
+
+  // for CC COH numu
+
+  /*
   std::vector<Variable2D*> vars2D = {
       new Variable2D(*vars[1], *vars[17]),
       new Variable2D(*vars[1], *vars[6]),
@@ -664,11 +718,14 @@ int main(const int argc, const char** argv)
       new Variable2D(*vars[17], *vars[18]),
       new Variable2D(*vars[17], *vars[19]),
       new Variable2D(*vars[18], *vars[19]),
-      */
   };
-  /* = {
-      new Variable2D(*vars[11], *vars[10])
-      }; */
+
+  std::vector< Variable2D* > vars2D = {
+      new Variable2D(*vars[1], *vars[15])
+      };
+  */
+
+  std::vector<Variable2D*> vars2D;
   
   if(doCCQENuValidation)
   {

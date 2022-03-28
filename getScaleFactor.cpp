@@ -393,7 +393,7 @@ int main(const int argc, const char** argv)
   preCuts.emplace_back(new Jreco::HasMINOSMatch<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::MINOSNumu<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::OneHadron<CVUniverse, MichelEvent>());
-  preCuts.emplace_back(new Jreco::ContainedHadron<CVUniverse, MichelEvent>());
+  //preCuts.emplace_back(new Jreco::ContainedHadron<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::IsPion<CVUniverse, MichelEvent>());
   preCuts.emplace_back(new Jreco::EnuRange<CVUniverse, MichelEvent>(Form("%1.1f <= Enu [GeV] <= %1.1f", minEnu, medEnu), minEnu, medEnu)); // 2 - 20 GeV
   preCuts.emplace_back(new Jreco::VtxECut<CVUniverse, MichelEvent>(Form("%1.1f <= E_vtx (%d mm) <= %1.1f [MeV]", vtxELow, distmm, vtxEHigh), vtxELow, vtxEHigh));
